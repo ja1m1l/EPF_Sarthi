@@ -1,53 +1,54 @@
-﻿# ─────────────────────────────────────────────────────────────
+# ─────────────────────────────────────────────────────────────
 # EPF Sentinel Makefile
 # ─────────────────────────────────────────────────────────────
 # Targets: build | deploy | test | logs
 #
 # Usage:
-#   make build          - SAM build (no container)
-#   make deploy         - SAM deploy with git sha injected
-#   make test           - run all pytest unit tests
-#   make logs FUNC=<name>  - tail the last 10 minutes of logs
+#   make build             - SAM containerized build
+#   make deploy            - SAM deploy with git sha injected
+#   make test              - run all pytest unit tests
+#   make logs              - print last 10 minutes of Lambda logs and exit
+#   make logs TAIL=1       - tail CloudWatch logs continuously
 #
 # Variables (override on CLI):
-#   STAGE   = dev | staging | prod   (default: dev)
-#   REGION  = AWS region             (default: ap-south-1)
-#   FUNC    = Lambda function name   (default: epf-sentinel-health-dev)
+#   STAGE           = dev | staging | prod   (default: dev)
+#   REGION          = AWS region             (default: ap-south-1)
+#   AMPLIFY_ORIGIN  = frontend origin        (default: https://placeholder.amplifyapp.com)
 # ─────────────────────────────────────────────────────────────
 
-STAGE   ?= dev
-REGION  ?= ap-south-1
-FUNC    ?= epf-sentinel-health-$(STAGE)
+STAGE           ?= dev
+REGION          ?= ap-south-1
+AMPLIFY_ORIGIN  ?= https://placeholder.amplifyapp.com
 
 # Resolve short git SHA; fall back to "local" if git is unavailable.
-GIT_SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo local)
+GIT_SHA := $(or $(shell git rev-parse --short HEAD),local)
 
-SAM_FLAGS := \
-	--region $(REGION) \
-	--config-file infra/samconfig.toml \
-	--config-env $(STAGE)
+# Map stage to config-env section in infra/samconfig.toml
+CONFIG_ENV := $(if $(filter dev,$(STAGE)),default,$(STAGE))
 
 TEMPLATE := infra/template.yaml
 
-.PHONY: build deploy test logs clean
+.PHONY: build deploy test logs
 
 ## ── build ────────────────────────────────────────────────────
 build:
 	@echo ">>> SAM build (stage=$(STAGE), sha=$(GIT_SHA))"
 	sam build \
 		--template $(TEMPLATE) \
-		--use-container=false \
-		$(SAM_FLAGS)
+		--use-container
 
 ## ── deploy ───────────────────────────────────────────────────
 deploy: build
 	@echo ">>> SAM deploy (stage=$(STAGE), sha=$(GIT_SHA))"
 	sam deploy \
 		--template $(TEMPLATE) \
+		--no-confirm-changeset \
+		--config-file infra/samconfig.toml \
+		--config-env $(CONFIG_ENV) \
 		--parameter-overrides \
 			Stage=$(STAGE) \
 			GitSha=$(GIT_SHA) \
-		$(SAM_FLAGS)
+			AmplifyOrigin=$(AMPLIFY_ORIGIN)
 
 ## ── test ─────────────────────────────────────────────────────
 test:
@@ -56,14 +57,9 @@ test:
 
 ## ── logs ─────────────────────────────────────────────────────
 logs:
-	@echo ">>> Tailing CloudWatch logs for $(FUNC)"
+	@echo ">>> Fetching CloudWatch logs for /aws/lambda/epf-sentinel-health-$(STAGE)"
 	sam logs \
-		--name $(FUNC) \
+		--cw-log-group /aws/lambda/epf-sentinel-health-$(STAGE) \
 		--region $(REGION) \
-		--tail \
-		--since 10m
-
-## ── clean ────────────────────────────────────────────────────
-clean:
-	@echo ">>> Cleaning SAM build artefacts"
-	rm -rf .aws-sam
+		-s "10mins ago" \
+		$(if $(filter 1 true,$(TAIL)),--tail,)
