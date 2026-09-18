@@ -1,0 +1,45 @@
+﻿# ─── SAM build artefacts ──────────────────────────────────────
+.aws-sam/
+
+# ─── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+.eggs/
+
+# ─── Virtual envs ─────────────────────────────────────────────
+.venv/
+venv/
+env/
+
+# ─── pytest ───────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ─── IDE ──────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+
+# ─── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Secrets – never commit ───────────────────────────────────
+.env
+*.env
+secrets.json
+
+# --- Later modules ---
+.hypothesis/
+node_modules/
+.env.*
+*.pem
+*.key

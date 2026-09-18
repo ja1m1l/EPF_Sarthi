@@ -1,0 +1,2 @@
+# Health function – no third-party runtime dependencies.
+# Shared layer deps listed in src/shared/requirements.txt.

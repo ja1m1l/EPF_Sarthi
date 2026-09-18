@@ -1,0 +1,238 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: EPF Sentinel - EPFO claim SLA tracker (Module 1.1 foundation)
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 256
+    Timeout: 29
+    Architectures: [x86_64]
+    Environment:
+      Variables:
+        POWERTOOLS_SERVICE_NAME: epf-sentinel
+        LOG_LEVEL: INFO
+    Layers:
+      - !Ref SharedLayer
+
+Parameters:
+  Stage:
+    Type: String
+    Default: dev
+    AllowedValues: [dev, staging, prod]
+
+  AmplifyOrigin:
+    Type: String
+    Default: "https://placeholder.amplifyapp.com"
+    Description: Full origin URL of the Amplify-hosted frontend.
+
+  GitSha:
+    Type: String
+    Default: "local"
+    Description: Short Git SHA injected by the CI pipeline / Makefile.
+
+Resources:
+
+  # Shared Lambda Layer
+  SharedLayer:
+    Type: AWS::Serverless::LayerVersion
+    Properties:
+      LayerName: !Sub "epf-sentinel-shared-${Stage}"
+      Description: Shared Python utilities (logging, models)
+      ContentUri: ../src/shared/
+      CompatibleRuntimes: [python3.12]
+      CompatibleArchitectures: [x86_64]
+    Metadata:
+      BuildMethod: makefile
+
+  # DynamoDB - Claims
+  ClaimsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-Claims-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: claimId
+          AttributeType: S
+        - AttributeName: status
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: claimId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: byStatus
+          KeySchema:
+            - AttributeName: userId
+              KeyType: HASH
+            - AttributeName: status
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  # DynamoDB - RuleChunks
+  RuleChunksTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-RuleChunks-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: ruleSetVersion
+          AttributeType: S
+        - AttributeName: chunkId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: ruleSetVersion
+          KeyType: HASH
+        - AttributeName: chunkId
+          KeyType: RANGE
+
+  # DynamoDB - AnalysisRuns
+  AnalysisRunsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-AnalysisRuns-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: claimId
+          AttributeType: S
+        - AttributeName: runId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: claimId
+          KeyType: HASH
+        - AttributeName: runId
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  # S3 - epf-sentinel-docs
+  DocsBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: !Sub "epf-sentinel-docs-${Stage}-${AWS::AccountId}"
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+            BucketKeyEnabled: true
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      VersioningConfiguration:
+        Status: Suspended
+      LifecycleConfiguration:
+        Rules:
+          - Id: expire-uploaded-docs
+            Status: Enabled
+            ExpirationInDays: 30
+            NoncurrentVersionExpiration:
+              NoncurrentDays: 1
+      CorsConfiguration:
+        CorsRules:
+          - AllowedMethods: [PUT]
+            AllowedOrigins:
+              - !Ref AmplifyOrigin
+            AllowedHeaders: ["*"]
+            MaxAge: 3600
+
+  # CloudWatch Log Groups (14-day retention)
+  HealthFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-health-${Stage}"
+      RetentionInDays: 14
+
+  # API Gateway HTTP API
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref Stage
+      Description: EPF Sentinel HTTP API
+      CorsConfiguration:
+        AllowHeaders: ["Content-Type", "Authorization", "X-Correlation-Id"]
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        AllowOrigins:
+          - !Ref AmplifyOrigin
+        MaxAge: 300
+      DefaultRouteSettings:
+        ThrottlingBurstLimit: 50
+        ThrottlingRateLimit: 100
+
+  # Lambda - HealthFunction
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-health-${Stage}"
+      CodeUri: ../src/functions/health/
+      Handler: app.handler
+      Description: Health-check endpoint - returns status, git sha, and UTC time
+      LoggingConfig:
+        LogGroup: !Ref HealthFunctionLogGroup
+      Environment:
+        Variables:
+          GIT_SHA: !Ref GitSha
+          STAGE: !Ref Stage
+      Events:
+        HealthGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /health
+            Method: GET
+      Policies:
+        - CloudWatchPutMetricPolicy: {}
+
+Outputs:
+  ApiEndpoint:
+    Description: Base URL of the HTTP API
+    Value: !Sub "https://${HttpApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}"
+    Export:
+      Name: !Sub "epf-sentinel-ApiEndpoint-${Stage}"
+
+  ClaimsTableName:
+    Description: Claims DynamoDB table name
+    Value: !Ref ClaimsTable
+    Export:
+      Name: !Sub "epf-sentinel-ClaimsTable-${Stage}"
+
+  RuleChunksTableName:
+    Description: RuleChunks DynamoDB table name
+    Value: !Ref RuleChunksTable
+    Export:
+      Name: !Sub "epf-sentinel-RuleChunksTable-${Stage}"
+
+  AnalysisRunsTableName:
+    Description: AnalysisRuns DynamoDB table name
+    Value: !Ref AnalysisRunsTable
+    Export:
+      Name: !Sub "epf-sentinel-AnalysisRunsTable-${Stage}"
+
+  DocsBucketName:
+    Description: S3 bucket for claim documents
+    Value: !Ref DocsBucket
+    Export:
+      Name: !Sub "epf-sentinel-DocsBucket-${Stage}"
+
+  SharedLayerArn:
+    Description: ARN of the shared Lambda layer
+    Value: !Ref SharedLayer
+    Export:
+      Name: !Sub "epf-sentinel-SharedLayer-${Stage}"

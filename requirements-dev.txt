@@ -1,0 +1,2 @@
+﻿# EPF Sentinel – test dependencies
+pytest>=8.0

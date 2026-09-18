@@ -1,0 +1,31 @@
+version = 0.1
+
+[default.global.parameters]
+stack_name = "epf-sentinel-dev"
+region = "ap-south-1"
+
+[default.build.parameters]
+use_container = false
+
+[default.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+fail_on_empty_changeset = false
+resolve_s3 = true
+s3_prefix = "epf-sentinel"
+parameter_overrides = "Stage=dev GitSha=local AmplifyOrigin=https://placeholder.amplifyapp.com"
+
+[default.sync.parameters]
+watch = true
+
+[staging.global.parameters]
+stack_name = "epf-sentinel-staging"
+region = "ap-south-1"
+
+[staging.deploy.parameters]
+capabilities = "CAPABILITY_IAM"
+confirm_changeset = true
+fail_on_empty_changeset = false
+resolve_s3 = true
+s3_prefix = "epf-sentinel"
+parameter_overrides = "Stage=staging GitSha=local AmplifyOrigin=https://placeholder.amplifyapp.com"
