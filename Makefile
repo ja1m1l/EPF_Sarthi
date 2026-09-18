@@ -38,9 +38,9 @@ build:
 		--use-container
 
 ## ── deploy ───────────────────────────────────────────────────
+# sam deploy uses .aws-sam/build/template.yaml from the build; omitting --template keeps --config-file from resolving relative to infra/
 deploy: build
 	@echo ">>> SAM deploy (stage=$(STAGE), sha=$(GIT_SHA))"
-	# Uses .aws-sam/build/template.yaml from build; omitting --template prevents config-file resolving relative to infra/
 	sam deploy \
 		--no-confirm-changeset \
 		--config-file infra/samconfig.toml \
