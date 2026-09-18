@@ -40,8 +40,8 @@ build:
 ## ── deploy ───────────────────────────────────────────────────
 deploy: build
 	@echo ">>> SAM deploy (stage=$(STAGE), sha=$(GIT_SHA))"
+	# Uses .aws-sam/build/template.yaml from build; omitting --template prevents config-file resolving relative to infra/
 	sam deploy \
-		--template $(TEMPLATE) \
 		--no-confirm-changeset \
 		--config-file infra/samconfig.toml \
 		--config-env $(CONFIG_ENV) \
