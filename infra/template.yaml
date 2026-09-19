@@ -238,6 +238,12 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-get-claim-${Stage}"
       RetentionInDays: 14
 
+  RulesAgentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-rules-agent-${Stage}"
+      RetentionInDays: 14
+
   # ─── API Gateway HTTP API ────────────────────────────────────────────────
 
   HttpApi:
@@ -369,6 +375,27 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ClaimsTable
 
+  RulesAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-rules-agent-${Stage}"
+      CodeUri: ../src/functions/rules_agent/
+      Handler: app.handler
+      Description: Rules Agent — selects applicable EPFO rule timeline or abstains
+      LoggingConfig:
+        LogGroup: !Ref RulesAgentFunctionLogGroup
+      Environment:
+        Variables:
+          GEMINI_SECRET_NAME: !Ref GeminiSecretName
+          RULECHUNKS_TABLE_NAME: !Ref RuleChunksTable
+          STAGE: !Ref Stage
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GeminiSecretName}*"
+        - DynamoDBReadPolicy:
+            TableName: !Ref RuleChunksTable
+        - CloudWatchPutMetricPolicy: {}
+
 Outputs:
   ApiEndpoint:
     Description: Base URL of the HTTP API
@@ -417,3 +444,9 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
     Export:
       Name: !Sub "epf-sentinel-CognitoUserPoolClientId-${Stage}"
+
+  RulesAgentFunctionArn:
+    Description: Rules Agent Lambda Function ARN
+    Value: !GetAtt RulesAgentFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-RulesAgentFunctionArn-${Stage}"

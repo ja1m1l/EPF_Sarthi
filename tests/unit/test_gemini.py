@@ -286,7 +286,7 @@ class TestGenerate:
 
         assert result == "Generated response text"
         call_kwargs = mock_client.models.generate_content.call_args
-        assert call_kwargs.kwargs["model"] == "gemini-2.5-flash"
+        assert call_kwargs.kwargs["model"] == gmod.MODEL_CONFIG["generation_model"]
         assert call_kwargs.kwargs["contents"] == "test prompt"
 
     def test_generate_retries_on_429_and_succeeds(self, monkeypatch):

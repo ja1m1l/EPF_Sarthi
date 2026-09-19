@@ -206,13 +206,25 @@ class Claim:
         amount_paise = _coerce_int(d["amountPaise"], "amountPaise")
         if amount_paise < 0:
             raise ValueError(f"amountPaise must be >= 0, got {amount_paise}")
+        raw_type = d["claimType"]
+        try:
+            c_type = ClaimType(raw_type)
+        except (ValueError, KeyError):
+            c_type = raw_type
+
+        raw_status = d["status"]
+        try:
+            c_status = ClaimStatus(raw_status)
+        except (ValueError, KeyError):
+            c_status = raw_status
+
         return cls(
             userId=d["userId"],
             claimId=d["claimId"],
-            claimType=ClaimType(d["claimType"]),
+            claimType=c_type,
             claimDateIso=d["claimDateIso"],
             amountPaise=amount_paise,
-            status=ClaimStatus(d["status"]),
+            status=c_status,
             createdAt=d["createdAt"],
             updatedAt=d["updatedAt"],
             deficiencyRaisedDateIso=d.get("deficiencyRaisedDateIso"),
@@ -405,5 +417,102 @@ class AnalysisRun:
             startedAt=d["startedAt"],
             finishedAt=d.get("finishedAt"),
             expiresAt=_coerce_int(d["expiresAt"], "expiresAt"),
+        )
+
+
+# ─────────────────────────────────────────────────────────────
+# RuleDecision
+# ─────────────────────────────────────────────────────────────
+
+@dataclass
+class RuleDecision:
+    """
+    Structured outcome of the Rules Agent (select_rule).
+
+    Attributes
+    ----------
+    applicable:
+        True if an applicable EPFO rule and timeline was found, False if abstaining.
+    timelineDays:
+        Integer number of days for the claim timeline, or None if abstained.
+    timelineBasis:
+        "CALENDAR" | "WORKING", or None if abstained.
+    citedChunkIds:
+        List of RuleChunk chunkIds from which the decision was drawn.
+    citedSourceUrls:
+        List of source URLs corresponding to the cited chunks.
+    quotedSpan:
+        Verbatim excerpt from one of the cited chunks supporting the decision.
+    confidence:
+        "HIGH" | "MEDIUM" | "LOW".
+    abstainReason:
+        Reason string if applicable is False (e.g. "UNGROUNDED_QUOTE",
+        "TIMELINE_NOT_IN_SOURCE", "FABRICATED_CITATION", "MODEL_OUTPUT_INVALID",
+        "NO_APPLICABLE_RULE", "INVALID_CLAIM_DATA", "CONFLICTING_TIMELINE_SOURCES"),
+        or None if applicable is True.
+    """
+
+    applicable: bool
+    timelineDays: Optional[int]
+    timelineBasis: Optional[str]
+    charterTargetDays: Optional[int] = None
+    citedChunkIds: list[str] = field(default_factory=list)
+    citedSourceUrls: list[str] = field(default_factory=list)
+    quotedSpan: str = ""
+    confidence: str = "HIGH"
+    abstainReason: Optional[str] = None
+
+    @classmethod
+    def abstain(
+        cls,
+        reason: str,
+        *,
+        confidence: str = "HIGH",
+    ) -> "RuleDecision":
+        """Factory for an abstained decision. Never carries citations or quotes."""
+        return cls(
+            applicable=False,
+            timelineDays=None,
+            timelineBasis=None,
+            charterTargetDays=None,
+            citedChunkIds=[],
+            citedSourceUrls=[],
+            quotedSpan="",
+            confidence=confidence,
+            abstainReason=reason,
+        )
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "RuleDecision":
+        raw_days = d.get("timelineDays")
+        timeline_days = int(raw_days) if raw_days is not None else None
+        applicable = bool(d.get("applicable", False))
+
+        raw_charter = d.get("charterTargetDays")
+        charter_days = int(raw_charter) if (applicable and raw_charter is not None) else None
+
+        abstain_reason = d.get("abstainReason")
+        if not abstain_reason or str(abstain_reason).lower() in ("", "null", "none"):
+            abstain_reason = None
+        if applicable:
+            abstain_reason = None
+
+        cited_chunk_ids = list(d.get("citedChunkIds", [])) if applicable else []
+        cited_source_urls = list(d.get("citedSourceUrls", [])) if applicable else []
+        quoted_span = str(d.get("quotedSpan", "")) if applicable else ""
+
+        return cls(
+            applicable=applicable,
+            timelineDays=timeline_days if applicable else None,
+            timelineBasis=d.get("timelineBasis") if applicable else None,
+            charterTargetDays=charter_days,
+            citedChunkIds=cited_chunk_ids,
+            citedSourceUrls=cited_source_urls,
+            quotedSpan=quoted_span,
+            confidence=str(d.get("confidence", "LOW")),
+            abstainReason=abstain_reason,
         )
 

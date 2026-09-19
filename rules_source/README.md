@@ -72,3 +72,7 @@ set GEMINI_SECRET_NAME=epf-sentinel/gemini-api-key
 # Run ingestion
 python scripts/ingest_rules.py --rules-dir rules_source --table-name epf-sentinel-RuleChunks-dev
 ```
+
+## Contract Note for Downstream Modules (3.1 & 4.2)
+Note: `charterTargetDays` (Optional[int], populated only when model-extracted and grounded) and `CONFLICTING_TIMELINE_SOURCES` (as a fifth `RuleAbstain` reason) are formalized contract additions beyond the original Module 2.2 specification, providing dual statutory/charter tracking and explicit multi-timeline collision handling for downstream consumption.
+

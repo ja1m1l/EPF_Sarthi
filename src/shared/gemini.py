@@ -37,13 +37,14 @@ log = get_logger(__name__)
 # ─────────────────────────────────────────────────────────────
 
 MODEL_CONFIG = {
-    "generation_model": "gemini-2.5-flash",
+    "generation_model": "gemini-3.5-flash-lite",
     "embedding_model": "gemini-embedding-001",
     "embedding_dim": 3072,
+    "temperature": 0.0,          # Pinned deterministic sampling
     "request_timeout": 30,       # seconds
-    "max_retries": 3,
+    "max_retries": 4,
     "backoff_base": 1.0,         # seconds
-    "backoff_max": 8.0,          # seconds
+    "backoff_max": 20.0,         # seconds
     "jitter_range": 0.5,         # ± seconds
 }
 
@@ -147,6 +148,9 @@ def _retry(fn, *args, **kwargs):
                 raise
             last_exc = exc
             delay = min(base * (2 ** attempt), cap) + random.uniform(-jitter, jitter)
+            # If 429 rate limit / quota exhaustion, back off sufficiently for quota token replenishment
+            if getattr(exc, "code", None) == 429 or "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
+                delay = max(delay, 12.0 + random.uniform(0.5, 2.0))
             delay = max(0.1, delay)
             log.warning(
                 "gemini.retry",
@@ -161,6 +165,7 @@ def _retry(fn, *args, **kwargs):
     # Should not reach here, but safety net
     if last_exc:
         raise last_exc
+
 
 
 # ─────────────────────────────────────────────────────────────
@@ -221,7 +226,8 @@ def generate(
     prompt: str,
     *,
     system_instruction: Optional[str] = None,
-    response_schema: Optional[dict] = None,
+    response_schema: Optional[dict[str, Any]] = None,
+    temperature: Optional[float] = None,
 ) -> str:
     """
     Generate text using the configured generation model.
@@ -234,6 +240,8 @@ def generate(
         Optional system instruction prepended to the conversation.
     response_schema:
         Optional JSON schema for structured output.
+    temperature:
+        Optional sampling temperature. Defaults to MODEL_CONFIG['temperature'] (0.0).
 
     Returns
     -------
@@ -243,12 +251,16 @@ def generate(
     model = MODEL_CONFIG["generation_model"]
     client = _get_client()
 
-    config_kwargs: dict[str, Any] = {}
+    effective_temp = temperature if temperature is not None else MODEL_CONFIG.get("temperature", 0.0)
+
+    config_kwargs: dict[str, Any] = {
+        "temperature": effective_temp,
+    }
     if response_schema is not None:
         config_kwargs["response_mime_type"] = "application/json"
         config_kwargs["response_schema"] = response_schema
 
-    config = genai_types.GenerateContentConfig(**config_kwargs) if config_kwargs else None
+    config = genai_types.GenerateContentConfig(**config_kwargs)
 
     t0 = time.monotonic()
 

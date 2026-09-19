@@ -33,6 +33,8 @@ from typing import Any, Optional
 from pydantic import BaseModel, ConfigDict, field_validator
 from pydantic import ValidationError as PydanticValidationError
 
+from shared.clock import today_ist
+
 from shared.models import ClaimStatus, ClaimType
 
 
@@ -96,8 +98,8 @@ class CreateClaimRequest(BaseModel):
     @field_validator("claimDate", mode="after")
     @classmethod
     def validate_claim_date(cls, v: date) -> date:
-        """Reject claim dates in the future."""
-        if v > date.today():
+        """Reject claim dates in the future (IST)."""
+        if v > today_ist():
             raise ValueError("CLAIM_DATE_IN_FUTURE")
         return v
 
