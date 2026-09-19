@@ -80,7 +80,20 @@ def handler(event: dict, context: object) -> dict:
         return internal_error()
 
     # Deserialise via the domain model to normalise Decimal → int etc.
-    claims = [Claim.from_dict(item).to_dict() for item in items]
+    # Skip a corrupt row instead of failing the whole list (empty vs 500).
+    claims = []
+    for item in items:
+        try:
+            claims.append(Claim.from_dict(item).to_dict())
+        except Exception:
+            log.error(
+                "claim.list.item_skipped",
+                exc_info=True,
+                userId=user_id,
+                claimId=item.get("claimId"),
+            )
+
+    claims.sort(key=lambda claim: claim.get("createdAt") or "", reverse=True)
 
     log.info("claim.list.succeeded", count=len(claims), userId=user_id)
 

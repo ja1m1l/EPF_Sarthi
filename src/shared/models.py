@@ -147,7 +147,7 @@ class ExtractionMethod(str, Enum):
     How the extractedText was produced.
 
     PDF_TEXT_LAYER  — pypdf extracted a native text layer (no model call).
-    VLM_TRANSCRIPTION — Gemini gemini-2.5-flash transcribed visible text
+    VLM_TRANSCRIPTION — the pinned Gemini generation model transcribed visible text
                         from image bytes or a scanned PDF.
     """
 
@@ -199,6 +199,10 @@ class Document:
     # Lifecycle
     status: str       # DocumentStatus value
 
+    # What the member said this file is (KYC, bank proof, …). Optional so
+    # older rows and unlabeled uploads still work.
+    documentKind: Optional[str] = None
+
     # Extraction results (populated after extraction)
     extractedText: Optional[str] = None
     extractionMethod: Optional[str] = None   # ExtractionMethod value
@@ -225,6 +229,7 @@ class Document:
         s3Key: str,
         contentType: str,
         expiresAt: int,
+        documentKind: Optional[str] = None,
     ) -> "Document":
         """Create a fresh PROCESSING stub before extraction begins."""
         if isinstance(expiresAt, bool) or not isinstance(expiresAt, int):
@@ -237,6 +242,7 @@ class Document:
             claimId=claimId,
             s3Key=s3Key,
             contentType=contentType,
+            documentKind=documentKind,
             status=DocumentStatus.PROCESSING.value,
             expiresAt=expiresAt,
         )
@@ -255,6 +261,7 @@ class Document:
             claimId=d["claimId"],
             s3Key=d["s3Key"],
             contentType=d["contentType"],
+            documentKind=d.get("documentKind"),
             status=d["status"],
             extractedText=d.get("extractedText"),
             extractionMethod=d.get("extractionMethod"),
@@ -310,6 +317,9 @@ class Claim:
 
     # Optional fields
     deficiencyRaisedDateIso: Optional[str] = None
+    notes: Optional[str] = None
+    latestRunId: Optional[str] = None
+    latestRunStatus: Optional[str] = None
 
     # ── factory ──────────────────────────────────────────────
 
@@ -323,6 +333,7 @@ class Claim:
         amountPaise: int,
         status: ClaimStatus = ClaimStatus.SUBMITTED,
         deficiencyRaisedDateIso: Optional[str] = None,
+        notes: Optional[str] = None,
     ) -> "Claim":
         """Create a new :class:`Claim` with a generated ``claimId`` and timestamps."""
         if isinstance(amountPaise, bool) or not isinstance(amountPaise, int):
@@ -341,6 +352,7 @@ class Claim:
             amountPaise=amountPaise,
             status=status,
             deficiencyRaisedDateIso=deficiencyRaisedDateIso,
+            notes=notes,
             createdAt=now,
             updatedAt=now,
         )
@@ -355,7 +367,7 @@ class Claim:
         d = asdict(self)
         d["claimType"] = self.claimType.value
         d["status"] = self.status.value
-        return d
+        return {k: v for k, v in d.items() if v is not None}
 
     @classmethod
     def from_dict(cls, d: dict) -> "Claim":
@@ -388,6 +400,9 @@ class Claim:
             createdAt=d["createdAt"],
             updatedAt=d["updatedAt"],
             deficiencyRaisedDateIso=d.get("deficiencyRaisedDateIso"),
+            notes=d.get("notes"),
+            latestRunId=d.get("latestRunId"),
+            latestRunStatus=d.get("latestRunStatus"),
         )
 
 
@@ -696,6 +711,11 @@ class RuleDecision:
         List of RuleChunk chunkIds from which the decision was drawn.
     citedSourceUrls:
         List of source URLs corresponding to the cited chunks.
+    citedSources:
+        Full provenance for each cited chunk — chunkId, sourceUrl, sourceTitle,
+        retrievedOn, authority.  Populated in code from the validated retrieved
+        chunks, never from model output, so a displayed citation cannot be a
+        URL the model invented.  Empty on any abstention.
     quotedSpan:
         Verbatim excerpt from one of the cited chunks supporting the decision.
     confidence:
@@ -713,6 +733,7 @@ class RuleDecision:
     charterTargetDays: Optional[int] = None
     citedChunkIds: list[str] = field(default_factory=list)
     citedSourceUrls: list[str] = field(default_factory=list)
+    citedSources: list[dict] = field(default_factory=list)
     quotedSpan: str = ""
     confidence: str = "HIGH"
     abstainReason: Optional[str] = None
@@ -732,6 +753,7 @@ class RuleDecision:
             charterTargetDays=None,
             citedChunkIds=[],
             citedSourceUrls=[],
+            citedSources=[],
             quotedSpan="",
             confidence=confidence,
             abstainReason=reason,
@@ -757,6 +779,7 @@ class RuleDecision:
 
         cited_chunk_ids = list(d.get("citedChunkIds", [])) if applicable else []
         cited_source_urls = list(d.get("citedSourceUrls", [])) if applicable else []
+        cited_sources = list(d.get("citedSources", [])) if applicable else []
         quoted_span = str(d.get("quotedSpan", "")) if applicable else ""
 
         return cls(
@@ -766,6 +789,7 @@ class RuleDecision:
             charterTargetDays=charter_days,
             citedChunkIds=cited_chunk_ids,
             citedSourceUrls=cited_source_urls,
+            citedSources=cited_sources,
             quotedSpan=quoted_span,
             confidence=str(d.get("confidence", "LOW")),
             abstainReason=abstain_reason,

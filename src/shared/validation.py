@@ -76,6 +76,7 @@ class CreateClaimRequest(BaseModel):
     amountRupees: Any          # coerced and validated in the field validator
     status: ClaimStatus
     deficiencyRaisedDate: Optional[date] = None
+    notes: Optional[str] = None
 
     # ── validators ────────────────────────────────────────────
 
@@ -102,6 +103,18 @@ class CreateClaimRequest(BaseModel):
         if v > today_ist():
             raise ValueError("CLAIM_DATE_IN_FUTURE")
         return v
+
+    @field_validator("notes", mode="before")
+    @classmethod
+    def validate_notes(cls, v: Any) -> Optional[str]:
+        if v is None:
+            return None
+        text = str(v).strip()
+        if not text:
+            return None
+        if len(text) > 2000:
+            raise ValueError("NOTES_TOO_LONG")
+        return text
 
     # ── money helper ──────────────────────────────────────────
 

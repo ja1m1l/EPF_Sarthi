@@ -65,6 +65,15 @@ _ALLOWED_CONTENT_TYPES: dict[str, str] = {
     "application/pdf": "pdf",
 }
 
+# Labels the member can attach so EvidenceAgent knows which file is which.
+_ALLOWED_DOCUMENT_KINDS: frozenset[str] = frozenset({
+    "KYC",
+    "BANK",
+    "DATE_OF_EXIT",
+    "DEFICIENCY",
+    "CLAIM_AMOUNT",
+})
+
 
 def _get_user_id(event: dict) -> str:
     return (
@@ -102,6 +111,8 @@ def _save_processing_stub(doc: Document) -> None:
         "status":      {"S": doc.status},
         "expiresAt":   {"N": str(doc.expiresAt)},
     }
+    if doc.documentKind:
+        item["documentKind"] = {"S": doc.documentKind}
     ddb.put_item(TableName=DOCUMENTS_TABLE, Item=item)
 
 
@@ -132,6 +143,14 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
             "INVALID_CONTENT_TYPE",
             "contentType",
             f"Allowed types: {', '.join(_ALLOWED_CONTENT_TYPES)}",
+        )
+
+    document_kind = str(body.get("documentKind") or "").strip().upper()
+    if document_kind and document_kind not in _ALLOWED_DOCUMENT_KINDS:
+        return bad_request(
+            "INVALID_DOCUMENT_KIND",
+            "documentKind",
+            f"Allowed kinds: {', '.join(sorted(_ALLOWED_DOCUMENT_KINDS))}",
         )
 
     ext = _ALLOWED_CONTENT_TYPES[content_type]
@@ -181,6 +200,7 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         s3Key=s3_key,
         contentType=content_type,
         expiresAt=int(time.time()) + TTL_30_DAYS,
+        documentKind=document_kind or None,
     )
 
     try:

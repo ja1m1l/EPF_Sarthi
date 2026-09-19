@@ -306,6 +306,23 @@ def post_validate(
             emit_metric("CharterTargetDowngrade")
             decision.charterTargetDays = None
 
+    # ── Citation provenance, derived in code ──────────────────
+    # Built from the validated cited chunks rather than from model output, so
+    # the source URL and retrieval date shown to the user belong to a chunk
+    # that actually exists in the corpus.  citedSourceUrls is overwritten for
+    # the same reason: the model must not be the origin of a displayed link.
+    decision.citedSources = [
+        {
+            "chunkId": chunk.chunkId,
+            "sourceUrl": chunk.sourceUrl,
+            "sourceTitle": chunk.sourceTitle,
+            "retrievedOn": chunk.retrievedOn,
+            "authority": chunk.authority,
+        }
+        for chunk in cited_chunks
+    ]
+    decision.citedSourceUrls = list(dict.fromkeys(c.sourceUrl for c in cited_chunks))
+
     # All guards passed: genuine grounded rule decision
     return decision
 

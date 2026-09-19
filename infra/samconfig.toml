@@ -13,7 +13,7 @@ confirm_changeset = true
 fail_on_empty_changeset = false
 resolve_s3 = true
 s3_prefix = "epf-sentinel"
-parameter_overrides = "Stage=dev GitSha=local AmplifyOrigin=https://placeholder.amplifyapp.com MfaConfiguration=OFF"
+parameter_overrides = "Stage=dev GitSha=local AmplifyOrigin=https://placeholder.amplifyapp.com CorsAllowedOrigins=\"https://placeholder.amplifyapp.com,http://localhost:5173\" MfaConfiguration=OFF"
 
 [default.sync.parameters]
 watch = true

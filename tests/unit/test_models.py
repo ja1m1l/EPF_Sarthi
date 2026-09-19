@@ -146,6 +146,15 @@ class TestClaim:
         original = self._make_claim()
         assert Claim.from_dict(original.to_dict()) == original
 
+    def test_round_trip_with_notes_and_latest_run(self):
+        original = self._make_claim(notes="Portal showed pending after 21 days.")
+        original.latestRunId = "run-1"
+        original.latestRunStatus = "COMPLETED"
+        recovered = Claim.from_dict(original.to_dict())
+        assert recovered.notes == "Portal showed pending after 21 days."
+        assert recovered.latestRunId == "run-1"
+        assert recovered.latestRunStatus == "COMPLETED"
+
     def test_round_trip_with_deficiency(self):
         original = self._make_claim(deficiencyRaisedDateIso="2026-09-15T08:30:00+00:00")
         recovered = Claim.from_dict(original.to_dict())

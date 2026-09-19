@@ -14,11 +14,20 @@
 #   STAGE           = dev | staging | prod   (default: dev)
 #   REGION          = AWS region             (default: ap-south-1)
 #   AMPLIFY_ORIGIN  = frontend origin        (default: https://placeholder.amplifyapp.com)
+#   CORS_ORIGINS    = comma-separated allowed origins
+#                     (default: Amplify origin, plus localhost:5173 on dev)
+#   USE_CONTAINER   = 1 to build inside Docker (default: 0)
 # ─────────────────────────────────────────────────────────────
 
 STAGE           ?= dev
 REGION          ?= ap-south-1
 AMPLIFY_ORIGIN  ?= https://placeholder.amplifyapp.com
+
+comma := ,
+
+# The Vite dev server is allowed through CORS on the dev stage only;
+# prod ships with the Amplify origin alone.
+CORS_ORIGINS ?= $(AMPLIFY_ORIGIN)$(if $(filter dev,$(STAGE)),$(comma)http://localhost:5173,)
 
 # Resolve short git SHA; fall back to "local" if git is unavailable.
 GIT_SHA := $(or $(shell git rev-parse --short HEAD),local)
@@ -31,11 +40,16 @@ TEMPLATE := infra/template.yaml
 .PHONY: build deploy test logs
 
 ## ── build ────────────────────────────────────────────────────
+# A container build is off by default: every function's requirements are
+# pure Python, and the only binary dependency (pydantic-core) lives in the
+# shared layer, whose build-SharedLayer recipe already pip-installs
+# manylinux2014_x86_64 wheels explicitly.  Set USE_CONTAINER=1 if Docker is
+# available and you want the stricter build.
 build:
 	@echo ">>> SAM build (stage=$(STAGE), sha=$(GIT_SHA))"
 	sam build \
 		--template $(TEMPLATE) \
-		--use-container
+		$(if $(filter 1 true,$(USE_CONTAINER)),--use-container,)
 
 ## ── deploy ───────────────────────────────────────────────────
 # sam deploy uses .aws-sam/build/template.yaml from the build; omitting --template keeps --config-file from resolving relative to infra/
@@ -48,7 +62,8 @@ deploy: build
 		--parameter-overrides \
 			Stage=$(STAGE) \
 			GitSha=$(GIT_SHA) \
-			AmplifyOrigin=$(AMPLIFY_ORIGIN)
+			AmplifyOrigin=$(AMPLIFY_ORIGIN) \
+			"CorsAllowedOrigins=$(CORS_ORIGINS)"
 
 ## ── test ─────────────────────────────────────────────────────
 test:

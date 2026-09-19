@@ -87,6 +87,7 @@ def handler(event: dict, context: object) -> dict:
         deficiencyRaisedDateIso=(
             req.deficiencyRaisedDate.isoformat() if req.deficiencyRaisedDate else None
         ),
+        notes=req.notes,
     )
 
     # ── persist ───────────────────────────────────────────────

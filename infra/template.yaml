@@ -26,6 +26,17 @@ Parameters:
     Default: "https://placeholder.amplifyapp.com"
     Description: Full origin URL of the Amplify-hosted frontend.
 
+  CorsAllowedOrigins:
+    Type: CommaDelimitedList
+    Default: "https://placeholder.amplifyapp.com"
+    Description: >-
+      Comma-separated allowed CORS origins for the HTTP API and the docs
+      bucket.  Normally just the Amplify origin; add http://localhost:5173
+      on dev to develop the frontend against the real API.  Declared as a
+      CommaDelimitedList rather than built with Fn::If because SAM collapses
+      intrinsic functions inside CorsConfiguration, silently discarding
+      AllowMethods and AllowHeaders.
+
   GitSha:
     Type: String
     Default: "local"
@@ -230,8 +241,7 @@ Resources:
       CorsConfiguration:
         CorsRules:
           - AllowedMethods: [PUT, POST]
-            AllowedOrigins:
-              - !Ref AmplifyOrigin
+            AllowedOrigins: !Ref CorsAllowedOrigins
             AllowedHeaders: ["*"]
             MaxAge: 3600
       NotificationConfiguration:
@@ -407,8 +417,7 @@ Resources:
       CorsConfiguration:
         AllowHeaders: ["Content-Type", "Authorization", "X-Correlation-Id"]
         AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
-        AllowOrigins:
-          - !Ref AmplifyOrigin
+        AllowOrigins: !Ref CorsAllowedOrigins
         MaxAge: 300
       DefaultRouteSettings:
         ThrottlingBurstLimit: 50
@@ -656,9 +665,12 @@ Resources:
         Variables:
           STAGE: !Ref Stage
           ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AnalysisRunsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
 
   RecordFailureFunction:
     Type: AWS::Serverless::Function
@@ -695,6 +707,7 @@ Resources:
           STAGE: !Ref Stage
           CLAIMS_TABLE_NAME: !Ref ClaimsTable
           ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
           ANALYSIS_SFN_ARN: !Ref AnalysisSfn
       Events:
         StartAnalysisPost:
@@ -710,6 +723,8 @@ Resources:
             TableName: !Ref ClaimsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref AnalysisRunsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref DocumentsTable
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt AnalysisSfn.Name
 
@@ -720,7 +735,7 @@ Resources:
       CodeUri: ../src/functions/get_run/
       Handler: app.handler
       Timeout: 29
-      Description: "GET /claims/{claimId}/runs/{runId} — fetch one AnalysisRun (JWT-protected)"
+      Description: "GET /claims/{claimId}/runs[/{runId}] — list or fetch AnalysisRuns (JWT-protected)"
       LoggingConfig:
         LogGroup: !Ref GetRunFunctionLogGroup
       Environment:
@@ -734,6 +749,14 @@ Resources:
           Properties:
             ApiId: !Ref HttpApi
             Path: /claims/{claimId}/runs/{runId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+        ListRunsGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}/runs
             Method: GET
             Auth:
               Authorizer: CognitoJwtAuthorizer

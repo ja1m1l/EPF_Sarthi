@@ -212,6 +212,26 @@ class TestPresignUpload(unittest.TestCase):
         self.assertEqual(item["status"]["S"], "PROCESSING")
         self.assertEqual(item["contentType"]["S"], "application/pdf")
 
+    def test_stores_document_kind_when_provided(self):
+        boto3_client, mock_ddb, _ = self._make_mocked_handler()
+        with patch.object(presign_app.boto3, "client", side_effect=boto3_client):
+            resp = presign_app.handler(
+                _jwt_event("u1", "c1", {"contentType": "image/png", "documentKind": "kyc"}),
+                MagicMock(),
+            )
+        self.assertEqual(resp["statusCode"], 200)
+        item = mock_ddb.put_item.call_args[1]["Item"]
+        self.assertEqual(item["documentKind"]["S"], "KYC")
+
+    def test_rejects_unknown_document_kind(self):
+        boto3_client, _, _ = self._make_mocked_handler()
+        with patch.object(presign_app.boto3, "client", side_effect=boto3_client):
+            resp = presign_app.handler(
+                _jwt_event("u1", "c1", {"contentType": "image/png", "documentKind": "passport"}),
+                MagicMock(),
+            )
+        self.assertEqual(resp["statusCode"], 400)
+
 
 if __name__ == "__main__":
     unittest.main()

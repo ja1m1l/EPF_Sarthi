@@ -37,7 +37,12 @@ log = get_logger(__name__)
 # ─────────────────────────────────────────────────────────────
 
 MODEL_CONFIG = {
-    "generation_model": "gemini-2.5-flash",
+    # gemini-2.5-flash was retired: generateContent returns 404
+    # "no longer available to new users", and Google's own error prescribes
+    # gemini-3.6-flash. Re-checked against the live model list on 2026-09-19.
+    # The embedding model is deliberately unchanged — repinning it would
+    # invalidate every stored vector for the current ruleSetVersion.
+    "generation_model": "gemini-3.6-flash",
     "embedding_model": "gemini-embedding-001",
     "embedding_dim": 3072,
     "temperature": 0.0,          # Pinned deterministic sampling
@@ -264,6 +269,12 @@ def generate(
 
     t0 = time.monotonic()
 
+    # The model that actually answered. It diverges from the pinned id when the
+    # fallback fires, and the logged provenance must report what really ran —
+    # a log that always echoes the pinned id is worse than none, because it
+    # reads as confirmation that the pin held.
+    served_model = model
+
     def _call(target_model: str):
         kwargs: dict[str, Any] = {
             "model": target_model,
@@ -283,8 +294,14 @@ def generate(
     except Exception as exc:
         if "404" in str(exc) or "NOT_FOUND" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc) or "429" in str(exc):
             fallback_model = "gemini-3.5-flash-lite" if model != "gemini-3.5-flash-lite" else "gemini-3.6-flash"
-            log.info("gemini.generate.fallback", fromModel=model, toModel=fallback_model, reason=str(exc))
+            log.warning(
+                "gemini.generate.fallback",
+                pinnedModel=model,
+                toModel=fallback_model,
+                reason=str(exc),
+            )
             response = _retry(lambda: _call(fallback_model))
+            served_model = fallback_model
         else:
             raise
     elapsed = time.monotonic() - t0
@@ -299,7 +316,8 @@ def generate(
 
     log.info(
         "gemini.generate.completed",
-        model=model,
+        model=served_model,
+        pinnedModel=model,
         latencySec=round(elapsed, 3),
         promptTokens=prompt_tokens,
         candidatesTokens=candidates_tokens,
@@ -325,9 +343,13 @@ def generate_multimodal(
 
     Model used
     ----------
-    ``gemini-2.5-flash`` (``MODEL_CONFIG["generation_model"]``).
-    This model is multimodal and vision-capable as of the google-genai SDK ≥ 0.8.
-    The model id is pinned in MODEL_CONFIG — change there, nowhere else.
+    ``MODEL_CONFIG["generation_model"]`` — currently ``gemini-3.6-flash``,
+    which is multimodal and vision-capable. The model id is pinned in
+    MODEL_CONFIG; change it there, nowhere else.
+
+    Unlike :func:`generate`, this path has no fallback model: a transcription
+    that cannot run must surface as a failure so the document is marked
+    NEEDS_MANUAL_ENTRY, never as an empty but apparently successful read.
 
     Parameters
     ----------

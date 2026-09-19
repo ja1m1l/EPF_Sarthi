@@ -18,7 +18,9 @@ import uuid
 from typing import Any
 
 import boto3
+from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import BotoCoreError, ClientError
+from decimal import Decimal
 
 from shared.http import internal_error, not_found, ok, _response
 from shared.logging import get_logger, set_correlation_id
@@ -31,8 +33,25 @@ CLAIMS_TABLE: str = os.environ.get("CLAIMS_TABLE_NAME", f"epf-sentinel-Claims-{S
 ANALYSIS_RUNS_TABLE: str = os.environ.get(
     "ANALYSIS_RUNS_TABLE_NAME", f"epf-sentinel-AnalysisRuns-{STAGE}"
 )
+DOCUMENTS_TABLE: str = os.environ.get(
+    "DOCUMENTS_TABLE_NAME", f"epf-sentinel-Documents-{STAGE}"
+)
 STATE_MACHINE_ARN: str = os.environ.get("ANALYSIS_SFN_ARN", "")
 TTL_90_DAYS: int = 90 * 24 * 60 * 60
+
+# Only EXTRACTED documents carry text the EvidenceAgent's substring check can
+# run against.  PROCESSING and NEEDS_MANUAL_ENTRY documents are deliberately
+# excluded so a failed extraction never reaches the model as if it were a
+# successful read.
+_EVIDENCE_READY_STATUS: str = "EXTRACTED"
+
+_DOCUMENT_KIND_TITLES: dict[str, str] = {
+    "KYC": "KYC / identity proof",
+    "BANK": "Bank account details",
+    "DATE_OF_EXIT": "Date of exit / relieving letter",
+    "DEFICIENCY": "Deficiency communication from EPFO",
+    "CLAIM_AMOUNT": "Claim form / settlement amount",
+}
 
 
 def _get_user_id(event: dict) -> str:
@@ -57,6 +76,90 @@ def _fetch_claim(user_id: str, claim_id: str) -> dict | None:
         },
     )
     return resp.get("Item")
+
+
+_deserializer = TypeDeserializer()
+
+
+def _unmarshal_claim(item: dict[str, Any]) -> dict[str, Any]:
+    """
+    Convert a marshalled DynamoDB claim into the plain dict the pipeline expects.
+
+    Numeric attributes must survive as numbers: amountPaise is integer paise
+    and the RulesAgent rejects it outright if it arrives as a string.
+    TypeDeserializer yields Decimal for N attributes, so whole numbers are
+    narrowed back to int here.
+    """
+    claim: dict[str, Any] = {}
+    for key, value in item.items():
+        deserialized = _deserializer.deserialize(value)
+        if isinstance(deserialized, Decimal):
+            deserialized = int(deserialized) if deserialized % 1 == 0 else float(deserialized)
+        claim[key] = deserialized
+    return claim
+
+
+def _fetch_documents(user_id: str, claim_id: str) -> list[dict[str, Any]]:
+    """
+    Load the claim's extracted documents for the EvidenceAgent.
+
+    Queries the Documents ByClaimId GSI and returns only documents whose
+    status is EXTRACTED and whose owner matches the authenticated user.
+    The ownership filter is a second tenancy check on top of the claim-scope
+    check already performed by the caller: the GSI is partitioned by claimId
+    alone, so it is not tenant-partitioned by itself.
+
+    ``text`` is passed through verbatim — the EvidenceAgent downgrades any
+    CONFIRMED verdict whose excerpt is not a literal substring of it.
+    """
+    ddb = boto3.client("dynamodb")
+    documents: list[dict[str, str]] = []
+    start_key: dict | None = None
+
+    while True:
+        kwargs: dict[str, Any] = {
+            "TableName": DOCUMENTS_TABLE,
+            "IndexName": "ByClaimId",
+            "KeyConditionExpression": "claimId = :cid",
+            "ExpressionAttributeValues": {":cid": {"S": claim_id}},
+        }
+        if start_key:
+            kwargs["ExclusiveStartKey"] = start_key
+
+        resp = ddb.query(**kwargs)
+
+        for item in resp.get("Items", []):
+            if item.get("userId", {}).get("S") != user_id:
+                log.warning(
+                    "start_analysis.documents.owner_mismatch",
+                    claimId=claim_id,
+                    documentId=item.get("documentId", {}).get("S", ""),
+                )
+                continue
+            if item.get("status", {}).get("S") != _EVIDENCE_READY_STATUS:
+                continue
+
+            text = item.get("extractedText", {}).get("S", "")
+            if not text:
+                continue
+
+            document_id = item.get("documentId", {}).get("S", "")
+            kind = item.get("documentKind", {}).get("S", "")
+            title = _DOCUMENT_KIND_TITLES.get(kind) or item.get("s3Key", {}).get("S", document_id)
+            payload: dict[str, Any] = {
+                "documentId": document_id,
+                "title": title,
+                "text": text,
+            }
+            if kind:
+                payload["documentKind"] = kind
+            documents.append(payload)
+
+        start_key = resp.get("LastEvaluatedKey")
+        if not start_key:
+            break
+
+    return documents
 
 
 def _save_run(run: AnalysisRun, claim: dict) -> None:
@@ -112,8 +215,30 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     if not raw_item:
         return not_found()
 
-    # Unmarshal DynamoDB item to plain dict for SFN payload
-    claim_dict = {k: list(v.values())[0] for k, v in raw_item.items()}
+    claim_dict = _unmarshal_claim(raw_item)
+
+    # ── Load extracted documents for the EvidenceAgent ──────────────────────
+    # A failure here is infrastructure failure, not "no evidence".  Proceeding
+    # with an empty list would render every check NOT_FOUND on a claim that
+    # actually has documents, which is indistinguishable from a genuine
+    # absence of evidence — exactly the collapse we must not allow.
+    try:
+        documents = _fetch_documents(user_id, claim_id)
+    except (BotoCoreError, ClientError) as exc:
+        log.error(
+            "start_analysis.documents.fetch_failed",
+            correlationId=correlation_id,
+            claimId=claim_id,
+            error=str(exc),
+        )
+        return internal_error()
+
+    log.info(
+        "start_analysis.documents.loaded",
+        correlationId=correlation_id,
+        claimId=claim_id,
+        documentCount=len(documents),
+    )
 
     # ── Start Step Functions execution ───────────────────────────────────────
     run_id = str(uuid.uuid4())
@@ -122,6 +247,7 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         "runId": run_id,
         "claimId": claim_id,
         "claim": claim_dict,
+        "documents": documents,
         "startedAt": utc_now_iso(),
     }
 

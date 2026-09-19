@@ -237,5 +237,9 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
 
     return {
         **event,
+        # The state machine's ResultSelector reads $.Payload.documents on every
+        # downstream state, so the key must always exist even when the claim
+        # has no extracted documents.
+        "documents": event.get("documents") or [],
         "analysisInput": analysis_input.to_dict(),
     }

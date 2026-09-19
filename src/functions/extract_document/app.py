@@ -16,7 +16,7 @@ Extraction routing
    a. application/pdf → pypdf text-layer extraction.
       - chars ≥ 20 → EXTRACTED, PDF_TEXT_LAYER, confidence=1.0.
       - chars < 20 → fall through to VLM.
-   b. image/* or PDF fallthrough → Gemini gemini-2.5-flash VLM.
+   b. image/* or PDF fallthrough → the pinned Gemini vision model.
       - chars ≥ 20 → EXTRACTED, VLM_TRANSCRIPTION, confidence=0.85.
       - chars < 20 → NEEDS_MANUAL_ENTRY(INSUFFICIENT_TEXT). Do NOT re-raise.
 5. Unhandled exceptions (corrupt file, network, Gemini 5xx exhausted) →
@@ -31,8 +31,9 @@ verbatim substring check runs against this field.
 
 Model used
 ----------
-gemini-2.5-flash — pinned as MODEL_CONFIG["generation_model"] in shared/gemini.py.
-This model is vision-capable and handles both images and PDF inline data.
+MODEL_CONFIG["generation_model"] in shared/gemini.py — currently
+gemini-3.6-flash, which is vision-capable and handles both images and PDF
+inline data.
 """
 
 from __future__ import annotations

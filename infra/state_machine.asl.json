@@ -16,6 +16,7 @@
         "runId.$":         "$.Payload.runId",
         "claimId.$":       "$.Payload.claimId",
         "claim.$":         "$.Payload.claim",
+        "documents.$":     "$.Payload.documents",
         "analysisInput.$": "$.Payload.analysisInput",
         "startedAt.$":     "$.Payload.startedAt"
       },
@@ -59,6 +60,7 @@
         "runId.$":         "$.Payload.runId",
         "claimId.$":       "$.Payload.claimId",
         "claim.$":         "$.Payload.claim",
+        "documents.$":     "$.Payload.documents",
         "analysisInput.$": "$.Payload.analysisInput",
         "rulesDecision.$": "$.Payload.rulesDecision",
         "startedAt.$":     "$.Payload.startedAt"
@@ -115,6 +117,7 @@
         "runId.$":         "$.Payload.runId",
         "claimId.$":       "$.Payload.claimId",
         "claim.$":         "$.Payload.claim",
+        "documents.$":     "$.Payload.documents",
         "analysisInput.$": "$.Payload.analysisInput",
         "rulesDecision.$": "$.Payload.rulesDecision",
         "slaResult.$":     "$.Payload.slaResult",

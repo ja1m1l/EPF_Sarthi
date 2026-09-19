@@ -199,6 +199,54 @@ class TestPostValidationGuardPrecedence:
         assert val.charterTargetDays == 7
         assert val.abstainReason is None
 
+    def test_citation_provenance_is_derived_from_chunks_not_model_output(self):
+        """
+        The source URL and retrievedOn shown in the UI must come from the
+        retrieved chunk, never from the model, so a displayed link cannot be
+        one the model invented.
+        """
+        chunk = _make_chunk("c1", "Settlement Time as per Scheme is 20 Days.")
+        decision = RuleDecision(
+            applicable=True,
+            timelineDays=20,
+            timelineBasis="CALENDAR",
+            citedChunkIds=["c1"],
+            citedSourceUrls=["https://hallucinated.example.org/not-real"],
+            quotedSpan="Settlement Time as per Scheme is 20 Days.",
+            confidence="HIGH",
+        )
+
+        val = post_validate(decision, [chunk])
+
+        assert val.applicable is True
+        assert val.citedSourceUrls == [chunk.sourceUrl]
+        assert val.citedSources == [{
+            "chunkId": "c1",
+            "sourceUrl": chunk.sourceUrl,
+            "sourceTitle": chunk.sourceTitle,
+            "retrievedOn": chunk.retrievedOn,
+            "authority": chunk.authority,
+        }]
+
+    def test_abstention_carries_no_citation_provenance(self):
+        chunk = _make_chunk("c1", "Settlement Time as per Scheme is 20 Days.")
+        decision = RuleDecision(
+            applicable=True,
+            timelineDays=20,
+            timelineBasis="CALENDAR",
+            citedChunkIds=["c1"],
+            citedSourceUrls=[],
+            quotedSpan="a quote that does not appear in the chunk",
+            confidence="HIGH",
+        )
+
+        val = post_validate(decision, [chunk])
+
+        assert val.applicable is False
+        assert val.abstainReason == "UNGROUNDED_QUOTE"
+        assert val.citedSources == []
+        assert val.citedSourceUrls == []
+
     @patch("shared.rules_agent.emit_metric")
     def test_charter_target_days_cleared_if_not_in_source(self, mock_metric):
         """

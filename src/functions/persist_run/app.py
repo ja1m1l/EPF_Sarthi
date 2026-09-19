@@ -48,6 +48,7 @@ from shared.models import AnalysisRun, AnalysisRunStatus, utc_now_iso
 log = get_logger(__name__)
 
 STAGE: str = os.environ.get("STAGE", "dev")
+CLAIMS_TABLE: str = os.environ.get("CLAIMS_TABLE_NAME", f"epf-sentinel-Claims-{STAGE}")
 ANALYSIS_RUNS_TABLE: str = os.environ.get(
     "ANALYSIS_RUNS_TABLE_NAME",
     f"epf-sentinel-AnalysisRuns-{STAGE}",
@@ -138,6 +139,17 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         )
         raise
 
+    try:
+        _pin_latest_run(event, claim_id, run_id, final_status, ddb)
+    except (BotoCoreError, ClientError) as exc:
+        log.error(
+            "persist_run.pin_failed",
+            correlationId=correlation_id,
+            runId=run_id,
+            claimId=claim_id,
+            error=str(exc),
+        )
+
     log.info(
         "persist_run.completed",
         correlationId=correlation_id,
@@ -153,3 +165,33 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         "correlationId": correlation_id,
         "status": final_status,
     }
+
+
+def _pin_latest_run(
+    event: dict[str, Any],
+    claim_id: str,
+    run_id: str,
+    status: str,
+    ddb: Any,
+) -> None:
+    """Remember this finished run on the Claim so later views skip re-analysis."""
+    user_id = (
+        (event.get("analysisInput") or {}).get("userId")
+        or (event.get("claim") or {}).get("userId")
+        or event.get("userId")
+        or ""
+    )
+    if not user_id or not claim_id or not run_id:
+        log.warning("persist_run.pin_skipped", claimId=claim_id, runId=run_id)
+        return
+
+    ddb.update_item(
+        TableName=CLAIMS_TABLE,
+        Key={"userId": {"S": user_id}, "claimId": {"S": claim_id}},
+        UpdateExpression="SET latestRunId = :r, latestRunStatus = :s, updatedAt = :u",
+        ExpressionAttributeValues={
+            ":r": {"S": run_id},
+            ":s": {"S": status},
+            ":u": {"S": utc_now_iso()},
+        },
+    )
