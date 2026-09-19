@@ -124,6 +124,149 @@ class AnalysisRunStatus(str, Enum):
     FAILED_VALIDATION = "FAILED_VALIDATION"
 
 
+class DocumentStatus(str, Enum):
+    """
+    Lifecycle states of a document uploaded for a claim.
+
+    Rules
+    -----
+    * NEEDS_MANUAL_ENTRY and EXTRACTED must NEVER share the same code path.
+    * A corrupt/unreadable file lands in NEEDS_MANUAL_ENTRY(EXTRACTION_FAILED).
+    * A document with genuine text but < 20 chars lands in
+      NEEDS_MANUAL_ENTRY(INSUFFICIENT_TEXT).
+    * A successful VLM pass with ≥ 20 chars lands in EXTRACTED.
+    """
+
+    PROCESSING = "PROCESSING"
+    EXTRACTED = "EXTRACTED"
+    NEEDS_MANUAL_ENTRY = "NEEDS_MANUAL_ENTRY"
+
+
+class ExtractionMethod(str, Enum):
+    """
+    How the extractedText was produced.
+
+    PDF_TEXT_LAYER  — pypdf extracted a native text layer (no model call).
+    VLM_TRANSCRIPTION — Gemini gemini-2.5-flash transcribed visible text
+                        from image bytes or a scanned PDF.
+    """
+
+    PDF_TEXT_LAYER = "PDF_TEXT_LAYER"
+    VLM_TRANSCRIPTION = "VLM_TRANSCRIPTION"
+
+
+# ─────────────────────────────────────────────────────────────
+# Document
+# ─────────────────────────────────────────────────────────────
+
+@dataclass
+class Document:
+    """
+    Represents a single uploaded claim document and its extracted text.
+
+    DynamoDB key
+    ------------
+    PK  userId      (S)
+    SK  documentId  (S)
+
+    GSI "ByClaimId"
+    ---------------
+    PK  claimId     (S)
+    SK  documentId  (S)
+
+    TTL
+    ---
+    ``expiresAt`` is a Unix epoch integer (30 days, matching DocsBucket lifecycle).
+
+    Text storage
+    ------------
+    ``extractedText`` is stored verbatim with only whitespace normalisation
+    (``re.sub(r'\\s+', ' ', text).strip()``).  No summarisation, no cleaning
+    beyond that.  The EvidenceAgent's substring check runs against this field.
+    """
+
+    # Primary key
+    userId: str
+    documentId: str
+
+    # Foreign key
+    claimId: str
+
+    # S3 location
+    s3Key: str        # {userId}/{claimId}/{documentId}.{ext}
+    contentType: str  # image/png | image/jpeg | application/pdf
+
+    # Lifecycle
+    status: str       # DocumentStatus value
+
+    # Extraction results (populated after extraction)
+    extractedText: Optional[str] = None
+    extractionMethod: Optional[str] = None   # ExtractionMethod value
+    confidence: Optional[float] = None
+    charCount: Optional[int] = None
+    processedAt: Optional[str] = None
+    fileSizeBytes: Optional[int] = None
+
+    # Failure context (only on NEEDS_MANUAL_ENTRY)
+    failureReason: Optional[str] = None
+
+    # TTL
+    expiresAt: int = 0
+
+    # ── factory ──────────────────────────────────────────────
+
+    @classmethod
+    def new_processing(
+        cls,
+        *,
+        userId: str,
+        documentId: str,
+        claimId: str,
+        s3Key: str,
+        contentType: str,
+        expiresAt: int,
+    ) -> "Document":
+        """Create a fresh PROCESSING stub before extraction begins."""
+        if isinstance(expiresAt, bool) or not isinstance(expiresAt, int):
+            raise TypeError(
+                f"expiresAt must be int (epoch seconds), got {type(expiresAt).__name__}"
+            )
+        return cls(
+            userId=userId,
+            documentId=documentId,
+            claimId=claimId,
+            s3Key=s3Key,
+            contentType=contentType,
+            status=DocumentStatus.PROCESSING.value,
+            expiresAt=expiresAt,
+        )
+
+    # ── serialisation ─────────────────────────────────────────
+
+    def to_dict(self) -> dict:
+        """Return a plain dict, omitting None values for DynamoDB friendliness."""
+        return {k: v for k, v in asdict(self).items() if v is not None}
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "Document":
+        return cls(
+            userId=d["userId"],
+            documentId=d["documentId"],
+            claimId=d["claimId"],
+            s3Key=d["s3Key"],
+            contentType=d["contentType"],
+            status=d["status"],
+            extractedText=d.get("extractedText"),
+            extractionMethod=d.get("extractionMethod"),
+            confidence=float(d["confidence"]) if d.get("confidence") is not None else None,
+            charCount=int(d["charCount"]) if d.get("charCount") is not None else None,
+            processedAt=d.get("processedAt"),
+            fileSizeBytes=int(d["fileSizeBytes"]) if d.get("fileSizeBytes") is not None else None,
+            failureReason=d.get("failureReason"),
+            expiresAt=int(d.get("expiresAt", 0)),
+        )
+
+
 # ─────────────────────────────────────────────────────────────
 # Claim
 # ─────────────────────────────────────────────────────────────

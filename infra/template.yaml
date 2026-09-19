@@ -130,9 +130,80 @@ Resources:
         AttributeName: expiresAt
         Enabled: true
 
+  # DynamoDB - Documents
+  DocumentsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-Documents-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: documentId
+          AttributeType: S
+        - AttributeName: claimId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: documentId
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: ByClaimId
+          KeySchema:
+            - AttributeName: claimId
+              KeyType: HASH
+            - AttributeName: documentId
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  # SQS - Document Events DLQ
+  DocumentEventDLQ:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "epf-sentinel-doc-events-dlq-${Stage}"
+      MessageRetentionPeriod: 1209600 # 14 days
+
+  # SQS - Document Events Queue
+  DocumentEventQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "epf-sentinel-doc-events-${Stage}"
+      VisibilityTimeout: 180
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DocumentEventDLQ.Arn
+        maxReceiveCount: 3
+
+  # SQS Queue Policy - Allow S3 to publish to DocumentEventQueue
+  DocumentEventQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      Queues:
+        - !Ref DocumentEventQueue
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: AllowS3Notifications
+            Effect: Allow
+            Principal:
+              Service: s3.amazonaws.com
+            Action: sqs:SendMessage
+            Resource: !GetAtt DocumentEventQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Sub "arn:aws:s3:::epf-sentinel-docs-${Stage}-${AWS::AccountId}"
+
   # S3 - epf-sentinel-docs
   DocsBucket:
     Type: AWS::S3::Bucket
+    DependsOn: DocumentEventQueuePolicy
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
     Properties:
@@ -158,11 +229,15 @@ Resources:
               NoncurrentDays: 1
       CorsConfiguration:
         CorsRules:
-          - AllowedMethods: [PUT]
+          - AllowedMethods: [PUT, POST]
             AllowedOrigins:
               - !Ref AmplifyOrigin
             AllowedHeaders: ["*"]
             MaxAge: 3600
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Event: "s3:ObjectCreated:*"
+            Queue: !GetAtt DocumentEventQueue.Arn
 
   # ─── Cognito ─────────────────────────────────────────────────────────────
 
@@ -296,6 +371,24 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-get-run-${Stage}"
+      RetentionInDays: 14
+
+  PresignUploadFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-presign-upload-${Stage}"
+      RetentionInDays: 14
+
+  GetDocumentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-get-document-${Stage}"
+      RetentionInDays: 14
+
+  ExtractDocumentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-extract-document-${Stage}"
       RetentionInDays: 14
 
   AnalysisSfnLogGroup:
@@ -650,6 +743,110 @@ Resources:
         - DynamoDBReadPolicy:
             TableName: !Ref AnalysisRunsTable
 
+  # ─── Document Intake Lambdas ──────────────────────────────────────────
+
+  PresignUploadFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-presign-upload-${Stage}"
+      CodeUri: ../src/functions/presign_upload/
+      Handler: app.handler
+      Timeout: 10
+      Description: "POST /claims/{claimId}/documents — generates presigned S3 POST URL (JWT-protected)"
+      LoggingConfig:
+        LogGroup: !Ref PresignUploadFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
+          DOCS_BUCKET_NAME: !Ref DocsBucket
+      Events:
+        PresignUploadPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}/documents
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentsTable
+        - S3CrudPolicy:
+            BucketName: !Ref DocsBucket
+
+  GetDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-get-document-${Stage}"
+      CodeUri: ../src/functions/get_document/
+      Handler: app.handler
+      Timeout: 10
+      Description: "GET /claims/{claimId}/documents/{documentId} — fetch document metadata (JWT-protected)"
+      LoggingConfig:
+        LogGroup: !Ref GetDocumentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
+      Events:
+        GetDocumentGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}/documents/{documentId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref DocumentsTable
+
+  ExtractDocumentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-extract-document-${Stage}"
+      CodeUri: ../src/functions/extract_document/
+      Handler: app.handler
+      Timeout: 120
+      MemorySize: 512
+      Description: "ExtractDocument — extracts text from uploaded claim documents via native PDF or Gemini VLM"
+      LoggingConfig:
+        LogGroup: !Ref ExtractDocumentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
+          DOCS_BUCKET_NAME: !Ref DocsBucket
+          GEMINI_SECRET_NAME: !Ref GeminiSecretName
+      Events:
+        DocumentQueueEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt DocumentEventQueue.Arn
+            BatchSize: 1
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentsTable
+        - S3ReadPolicy:
+            BucketName: !Ref DocsBucket
+        - SQSPollerPolicy:
+            QueueName: !GetAtt DocumentEventQueue.QueueName
+        - CloudWatchPutMetricPolicy: {}
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GeminiSecretName}*"
+
   # ─── Step Functions Express State Machine ──────────────────────────────
 
   AnalysisSfnRole:
@@ -789,3 +986,39 @@ Outputs:
     Value: !GetAtt GetRunFunction.Arn
     Export:
       Name: !Sub "epf-sentinel-GetRunFunctionArn-${Stage}"
+
+  DocumentsTableName:
+    Description: Documents DynamoDB table name
+    Value: !Ref DocumentsTable
+    Export:
+      Name: !Sub "epf-sentinel-DocumentsTable-${Stage}"
+
+  DocumentEventQueueUrl:
+    Description: SQS Queue URL for document events
+    Value: !Ref DocumentEventQueue
+    Export:
+      Name: !Sub "epf-sentinel-DocumentEventQueueUrl-${Stage}"
+
+  DocumentEventDLQUrl:
+    Description: SQS DLQ URL for failed document events
+    Value: !Ref DocumentEventDLQ
+    Export:
+      Name: !Sub "epf-sentinel-DocumentEventDLQUrl-${Stage}"
+
+  PresignUploadFunctionArn:
+    Description: PresignUpload Lambda Function ARN
+    Value: !GetAtt PresignUploadFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-PresignUploadFunctionArn-${Stage}"
+
+  GetDocumentFunctionArn:
+    Description: GetDocument Lambda Function ARN
+    Value: !GetAtt GetDocumentFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-GetDocumentFunctionArn-${Stage}"
+
+  ExtractDocumentFunctionArn:
+    Description: ExtractDocument Lambda Function ARN
+    Value: !GetAtt ExtractDocumentFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-ExtractDocumentFunctionArn-${Stage}"

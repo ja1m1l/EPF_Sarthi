@@ -307,3 +307,96 @@ def generate(
     )
 
     return text
+
+
+# ─────────────────────────────────────────────────────────────
+# Public API — generate_multimodal()
+# ─────────────────────────────────────────────────────────────
+
+def generate_multimodal(
+    image_bytes: bytes,
+    mime_type: str,
+    prompt: str,
+    *,
+    system_instruction: Optional[str] = None,
+) -> str:
+    """
+    Transcribe or analyse raw file bytes using the vision-capable generation model.
+
+    Model used
+    ----------
+    ``gemini-2.5-flash`` (``MODEL_CONFIG["generation_model"]``).
+    This model is multimodal and vision-capable as of the google-genai SDK ≥ 0.8.
+    The model id is pinned in MODEL_CONFIG — change there, nowhere else.
+
+    Parameters
+    ----------
+    image_bytes:
+        Raw bytes of the file (image or PDF).  Passed as an ``inline_data``
+        Part so no intermediate upload step is required.
+    mime_type:
+        MIME type string, e.g. ``"image/jpeg"``, ``"image/png"``,
+        ``"application/pdf"``.
+    prompt:
+        Text instruction accompanying the file, e.g.
+        ``"Transcribe all visible text verbatim."``.
+    system_instruction:
+        Optional system instruction prepended to the conversation.
+
+    Returns
+    -------
+    str
+        The model's text response (transcribed / analysed text).
+
+    Raises
+    ------
+    Any exception from the Gemini API that is not retryable (non-429, non-5xx)
+    propagates immediately.  Retryable errors are retried with bounded
+    exponential backoff per MODEL_CONFIG.
+    """
+    model = MODEL_CONFIG["generation_model"]
+    client = _get_client()
+
+    # Build the multimodal content: [inline_data_part, text_prompt_part]
+    inline_part = genai_types.Part.from_bytes(data=image_bytes, mime_type=mime_type)
+
+    config_kwargs: dict[str, Any] = {
+        "temperature": MODEL_CONFIG.get("temperature", 0.0),
+    }
+
+    if system_instruction:
+        config_kwargs["system_instruction"] = system_instruction
+
+    config = genai_types.GenerateContentConfig(**config_kwargs)
+
+    t0 = time.monotonic()
+
+    def _call() -> Any:
+        return client.models.generate_content(
+            model=model,
+            contents=[inline_part, prompt],
+            config=config,
+        )
+
+    response = _retry(_call)
+    elapsed = time.monotonic() - t0
+
+    text = response.text or ""
+
+    usage = getattr(response, "usage_metadata", None)
+    prompt_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
+    candidates_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
+    total_tokens = getattr(usage, "total_token_count", 0) if usage else 0
+
+    log.info(
+        "gemini.generate_multimodal.completed",
+        model=model,
+        mimeType=mime_type,
+        inputBytes=len(image_bytes),
+        latencySec=round(elapsed, 3),
+        promptTokens=prompt_tokens,
+        candidatesTokens=candidates_tokens,
+        totalTokens=total_tokens,
+    )
+
+    return text
