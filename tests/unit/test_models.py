@@ -18,7 +18,7 @@ from datetime import datetime, timezone, timedelta
 
 import pytest
 
-from models import (
+from shared.models import (
     AnalysisRun,
     Claim,
     ClaimStatus,

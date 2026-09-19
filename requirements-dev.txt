@@ -1,2 +1,5 @@
-﻿# EPF Sentinel – test dependencies
+# EPF Sentinel – test / local development dependencies
 pytest>=8.0
+pydantic>=2.7,<3
+requests>=2.31
+boto3>=1.34

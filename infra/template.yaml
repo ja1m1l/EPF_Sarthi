@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: EPF Sentinel - EPFO claim SLA tracker (Module 1.1 foundation)
+Description: EPF Sentinel - EPFO claim SLA tracker (Module 1.2 - auth + claim CRUD)
 
 Globals:
   Function:
@@ -30,6 +30,12 @@ Parameters:
     Type: String
     Default: "local"
     Description: Short Git SHA injected by the CI pipeline / Makefile.
+
+  MfaConfiguration:
+    Type: String
+    Default: "OFF"
+    AllowedValues: ["OFF", "OPTIONAL", "REQUIRED"]
+    Description: MFA setting for the Cognito user pool (OFF for v1, leave OPTIONAL/REQUIRED for later).
 
 Resources:
 
@@ -153,14 +159,82 @@ Resources:
             AllowedHeaders: ["*"]
             MaxAge: 3600
 
-  # CloudWatch Log Groups (14-day retention)
+  # ─── Cognito ─────────────────────────────────────────────────────────────
+
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "epf-sentinel-users-${Stage}"
+      AutoVerifiedAttributes: [email]
+      UsernameAttributes: [email]
+      MfaConfiguration: !Ref MfaConfiguration
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      UserPoolAddOns:
+        AdvancedSecurityMode: AUDIT
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "epf-sentinel-client-${Stage}"
+      UserPoolId: !Ref CognitoUserPool
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      PreventUserExistenceErrors: ENABLED
+
+  # ─── CloudWatch Log Groups (14-day retention) ─────────────────────────────
+
   HealthFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-health-${Stage}"
       RetentionInDays: 14
 
-  # API Gateway HTTP API
+  CreateClaimFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-create-claim-${Stage}"
+      RetentionInDays: 14
+
+  ListClaimsFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-list-claims-${Stage}"
+      RetentionInDays: 14
+
+  GetClaimFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-get-claim-${Stage}"
+      RetentionInDays: 14
+
+  # ─── API Gateway HTTP API ────────────────────────────────────────────────
+
   HttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
@@ -175,15 +249,26 @@ Resources:
       DefaultRouteSettings:
         ThrottlingBurstLimit: 50
         ThrottlingRateLimit: 100
+      Auth:
+        Authorizers:
+          CognitoJwtAuthorizer:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${CognitoUserPool}"
+              audience:
+                - !Ref CognitoUserPoolClient
+        # No DefaultAuthorizer — each protected function sets Auth.Authorizer explicitly.
+        # The /health route is intentionally left public (no Auth block on HealthFunction).
 
-  # Lambda - HealthFunction
+  # ─── Lambda functions ────────────────────────────────────────────────────
+
   HealthFunction:
     Type: AWS::Serverless::Function
     Properties:
       FunctionName: !Sub "epf-sentinel-health-${Stage}"
       CodeUri: ../src/functions/health/
       Handler: app.handler
-      Description: Health-check endpoint - returns status, git sha, and UTC time
+      Description: Health-check endpoint - returns status, git sha, and UTC time (public, no auth)
       LoggingConfig:
         LogGroup: !Ref HealthFunctionLogGroup
       Environment:
@@ -197,8 +282,87 @@ Resources:
             ApiId: !Ref HttpApi
             Path: /health
             Method: GET
+            # No Auth block — this route is intentionally public.
       Policies:
         - CloudWatchPutMetricPolicy: {}
+
+  CreateClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-create-claim-${Stage}"
+      CodeUri: ../src/functions/create_claim/
+      Handler: app.handler
+      Description: POST /claims — create a new EPF claim (JWT-protected)
+      LoggingConfig:
+        LogGroup: !Ref CreateClaimFunctionLogGroup
+      Environment:
+        Variables:
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          STAGE: !Ref Stage
+      Events:
+        CreateClaimPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
+
+  ListClaimsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-list-claims-${Stage}"
+      CodeUri: ../src/functions/list_claims/
+      Handler: app.handler
+      Description: GET /claims — list authenticated user's claims (JWT-protected)
+      LoggingConfig:
+        LogGroup: !Ref ListClaimsFunctionLogGroup
+      Environment:
+        Variables:
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          STAGE: !Ref Stage
+      Events:
+        ListClaimsGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
+
+  GetClaimFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-get-claim-${Stage}"
+      CodeUri: ../src/functions/get_claim/
+      Handler: app.handler
+      Description: GET /claims/{claimId} — fetch one claim (JWT-protected, tenant-scoped)
+      LoggingConfig:
+        LogGroup: !Ref GetClaimFunctionLogGroup
+      Environment:
+        Variables:
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          STAGE: !Ref Stage
+      Events:
+        GetClaimGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
 
 Outputs:
   ApiEndpoint:
@@ -236,3 +400,15 @@ Outputs:
     Value: !Ref SharedLayer
     Export:
       Name: !Sub "epf-sentinel-SharedLayer-${Stage}"
+
+  CognitoUserPoolId:
+    Description: Cognito User Pool ID
+    Value: !Ref CognitoUserPool
+    Export:
+      Name: !Sub "epf-sentinel-CognitoUserPoolId-${Stage}"
+
+  CognitoUserPoolClientId:
+    Description: Cognito User Pool App Client ID
+    Value: !Ref CognitoUserPoolClient
+    Export:
+      Name: !Sub "epf-sentinel-CognitoUserPoolClientId-${Stage}"

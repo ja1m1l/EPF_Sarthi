@@ -1,0 +1,3 @@
+# Runtime dependencies for the list_claims Lambda.
+# boto3 is provided by the Lambda runtime.
+# No extra deps — uses only shared layer + stdlib.
