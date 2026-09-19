@@ -212,16 +212,27 @@ class TestRuleChunk:
     def _make_chunk(self, **overrides) -> RuleChunk:
         defaults = dict(
             ruleSetVersion="2024-10-01",
-            chunkId="chunk-001",
+            chunkId="abc123def456gh78",
             text="EPFO shall settle claims within 20 days.",
-            sourceRef="EPFO Circular 2024/10/01 S3.2",
             embedding=[0.1, 0.2, 0.3],
+            embeddingModel="gemini-embedding-001",
+            embeddingDim=3072,
+            sourceUrl="https://epfindia.gov.in/charter",
+            sourceTitle="EPFO Citizen's Charter",
+            retrievedOn="2024-10-01",
+            authority="EPFO_OFFICIAL",
+            headingPath="## Timelines > ### Final Settlement",
+            tokenCount=8,
         )
         defaults.update(overrides)
         return RuleChunk.new(**defaults)
 
     def test_created_at_is_utc(self):
         assert self._make_chunk().createdAt.endswith("+00:00")
+
+    def test_source_url_required(self):
+        with pytest.raises(ValueError, match="sourceUrl is required"):
+            self._make_chunk(sourceUrl="")
 
     def test_round_trip(self):
         original = self._make_chunk()
@@ -244,6 +255,33 @@ class TestRuleChunk:
         assert len(recovered.embedding) == 768
         assert recovered.embedding[0] == pytest.approx(0.0)
         assert recovered.embedding[767] == pytest.approx(0.767)
+
+    def test_provenance_fields_round_trip(self):
+        chunk = self._make_chunk()
+        d = chunk.to_dict()
+        assert d["embeddingModel"] == "gemini-embedding-001"
+        assert d["embeddingDim"] == 3072
+        assert d["sourceUrl"] == "https://epfindia.gov.in/charter"
+        assert d["sourceTitle"] == "EPFO Citizen's Charter"
+        assert d["retrievedOn"] == "2024-10-01"
+        assert d["authority"] == "EPFO_OFFICIAL"
+        assert d["headingPath"] == "## Timelines > ### Final Settlement"
+        assert d["tokenCount"] == 8
+
+    def test_from_dict_coerces_embedding_dim_from_decimal(self):
+        d = self._make_chunk().to_dict()
+        d["embeddingDim"] = Decimal("3072")
+        recovered = RuleChunk.from_dict(d)
+        assert isinstance(recovered.embeddingDim, int)
+        assert recovered.embeddingDim == 3072
+
+    def test_from_dict_coerces_token_count_from_decimal(self):
+        d = self._make_chunk().to_dict()
+        d["tokenCount"] = Decimal("8")
+        recovered = RuleChunk.from_dict(d)
+        assert isinstance(recovered.tokenCount, int)
+        assert recovered.tokenCount == 8
+
 
 
 # -----------------------------------------------------------------

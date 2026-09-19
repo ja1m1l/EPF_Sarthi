@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: EPF Sentinel - EPFO claim SLA tracker (Module 1.2 - auth + claim CRUD)
+Description: EPF Sentinel - EPFO claim SLA tracker (Module 2.1 - rules ingestion + embeddings)
 
 Globals:
   Function:
@@ -36,6 +36,11 @@ Parameters:
     Default: "OFF"
     AllowedValues: ["OFF", "OPTIONAL", "REQUIRED"]
     Description: MFA setting for the Cognito user pool (OFF for v1, leave OPTIONAL/REQUIRED for later).
+
+  GeminiSecretName:
+    Type: String
+    Default: "epf-sentinel/gemini-api-key"
+    Description: Secrets Manager secret name holding the Gemini API key.
 
 Resources:
 

@@ -2,3 +2,4 @@
 # Keep this minimal – Lambda layers are size-constrained.
 # boto3 is provided by the Lambda runtime; do not add it here.
 pydantic>=2.7,<3
+google-genai>=1.0

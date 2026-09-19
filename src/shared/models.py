@@ -232,19 +232,33 @@ class RuleChunk:
     DynamoDB key
     ------------
     PK  ruleSetVersion  (S)
-    SK  chunkId         (S)
+    SK  chunkId         (S)  — sha256(sourceUrl + headingPath + text)[:16]
+
+    No chunk may exist without a ``sourceUrl``.
     """
 
     # Primary key fields
     ruleSetVersion: str        # e.g. "2024-10-01"
-    chunkId: str               # deterministic hash or sequential id
+    chunkId: str               # sha256(sourceUrl + headingPath + text)[:16]
 
     # Content
     text: str                  # raw regulation text for this chunk
-    sourceRef: str             # human-readable citation (doc name + section)
 
-    # Embedding (stored as a list of floats from gemini-embedding-001)
-    embedding: list[float]
+    # Embedding vector
+    embedding: list[float]     # from the embedding model
+
+    # Embedding provenance (recorded per-chunk because changing the
+    # embedding model invalidates every vector for that version)
+    embeddingModel: str        # e.g. "gemini-embedding-001"
+    embeddingDim: int          # e.g. 3072
+
+    # Source provenance — REQUIRED; no chunk without a sourceUrl
+    sourceUrl: str
+    sourceTitle: str
+    retrievedOn: str           # ISO date string from frontmatter
+    authority: str             # "EPFO_OFFICIAL" | "SCHEME_TEXT"
+    headingPath: str           # e.g. "## Timelines > ### Final Settlement"
+    tokenCount: int            # approximate word-split token count
 
     # Metadata
     createdAt: str             # ISO-8601 UTC
@@ -258,15 +272,31 @@ class RuleChunk:
         ruleSetVersion: str,
         chunkId: str,
         text: str,
-        sourceRef: str,
         embedding: list[float],
+        embeddingModel: str,
+        embeddingDim: int,
+        sourceUrl: str,
+        sourceTitle: str,
+        retrievedOn: str,
+        authority: str,
+        headingPath: str,
+        tokenCount: int,
     ) -> "RuleChunk":
+        if not sourceUrl:
+            raise ValueError("sourceUrl is required — no chunk may exist without one")
         return cls(
             ruleSetVersion=ruleSetVersion,
             chunkId=chunkId,
             text=text,
-            sourceRef=sourceRef,
             embedding=embedding,
+            embeddingModel=embeddingModel,
+            embeddingDim=embeddingDim,
+            sourceUrl=sourceUrl,
+            sourceTitle=sourceTitle,
+            retrievedOn=retrievedOn,
+            authority=authority,
+            headingPath=headingPath,
+            tokenCount=tokenCount,
             createdAt=utc_now_iso(),
         )
 
@@ -281,8 +311,15 @@ class RuleChunk:
             ruleSetVersion=d["ruleSetVersion"],
             chunkId=d["chunkId"],
             text=d["text"],
-            sourceRef=d["sourceRef"],
             embedding=[float(v) for v in d["embedding"]],
+            embeddingModel=d["embeddingModel"],
+            embeddingDim=_coerce_int(d["embeddingDim"], "embeddingDim"),
+            sourceUrl=d["sourceUrl"],
+            sourceTitle=d["sourceTitle"],
+            retrievedOn=d["retrievedOn"],
+            authority=d["authority"],
+            headingPath=d["headingPath"],
+            tokenCount=_coerce_int(d["tokenCount"], "tokenCount"),
             createdAt=d["createdAt"],
         )
 
