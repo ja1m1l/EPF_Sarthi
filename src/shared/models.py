@@ -403,13 +403,13 @@ class EvidenceReport:
     """
     Structured output of EvidenceAgent.
 
-    In stub mode this is a fixed canned object.  In production it will
-    contain retrieved documents and relevance scores.
+    Contains retrieved documents, summary, and verification checks.
     """
 
-    documents: list[dict]   # list of {title, url, relevanceScore}
+    documents: list[dict]   # list of {title, url, relevanceScore} or {documentId, title, text}
     summary: str
-    stubbed: bool = True
+    checks: list[dict] = field(default_factory=list)
+    stubbed: bool = False
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -419,7 +419,8 @@ class EvidenceReport:
         return cls(
             documents=list(d.get("documents", [])),
             summary=str(d.get("summary", "")),
-            stubbed=bool(d.get("stubbed", True)),
+            checks=list(d.get("checks", [])),
+            stubbed=bool(d.get("stubbed", False)),
         )
 
 

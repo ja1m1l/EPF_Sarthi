@@ -37,7 +37,7 @@ log = get_logger(__name__)
 # ─────────────────────────────────────────────────────────────
 
 MODEL_CONFIG = {
-    "generation_model": "gemini-3.5-flash-lite",
+    "generation_model": "gemini-2.5-flash",
     "embedding_model": "gemini-embedding-001",
     "embedding_dim": 3072,
     "temperature": 0.0,          # Pinned deterministic sampling
@@ -264,9 +264,9 @@ def generate(
 
     t0 = time.monotonic()
 
-    def _call():
+    def _call(target_model: str):
         kwargs: dict[str, Any] = {
-            "model": model,
+            "model": target_model,
             "contents": prompt,
         }
         if system_instruction:
@@ -278,7 +278,15 @@ def generate(
             kwargs["config"] = config
         return client.models.generate_content(**kwargs)
 
-    response = _retry(_call)
+    try:
+        response = _retry(lambda: _call(model))
+    except Exception as exc:
+        if "404" in str(exc) or "NOT_FOUND" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc) or "429" in str(exc):
+            fallback_model = "gemini-3.5-flash-lite" if model != "gemini-3.5-flash-lite" else "gemini-3.6-flash"
+            log.info("gemini.generate.fallback", fromModel=model, toModel=fallback_model, reason=str(exc))
+            response = _retry(lambda: _call(fallback_model))
+        else:
+            raise
     elapsed = time.monotonic() - t0
 
     text = response.text or ""

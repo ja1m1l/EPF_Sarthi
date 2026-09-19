@@ -464,14 +464,18 @@ Resources:
       FunctionName: !Sub "epf-sentinel-claim-agent-${Stage}"
       CodeUri: ../src/functions/claim_agent/
       Handler: app.handler
-      Timeout: 10
+      Timeout: 30
       Description: "ClaimAgent (Step 1) — validates Claim and produces AnalysisInput"
       LoggingConfig:
         LogGroup: !Ref ClaimAgentFunctionLogGroup
       Environment:
         Variables:
           STAGE: !Ref Stage
-          USE_STUBS: "true"
+          USE_STUBS: "false"
+          GEMINI_SECRET_NAME: !Ref GeminiSecretName
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GeminiSecretName}*"
 
   RulesAgentStepFunction:
     Type: AWS::Serverless::Function
@@ -486,7 +490,7 @@ Resources:
       Environment:
         Variables:
           STAGE: !Ref Stage
-          USE_STUBS: "true"
+          USE_STUBS: "false"
           RULES_AGENT_FUNCTION_NAME: !Ref RulesAgentFunction
       Policies:
         - LambdaInvokePolicy:
@@ -513,13 +517,18 @@ Resources:
       CodeUri: ../src/functions/evidence_agent/
       Handler: app.handler
       Timeout: 30
-      Description: "EvidenceAgent (Step 4) — evidence retrieval (stub)"
+      Description: "EvidenceAgent (Step 4) — evidence retrieval and verification"
       LoggingConfig:
         LogGroup: !Ref EvidenceAgentFunctionLogGroup
       Environment:
         Variables:
           STAGE: !Ref Stage
-          USE_STUBS: "true"
+          USE_STUBS: "false"
+          GEMINI_SECRET_NAME: !Ref GeminiSecretName
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GeminiSecretName}*"
+        - CloudWatchPutMetricPolicy: {}
 
   GrievanceAgentFunction:
     Type: AWS::Serverless::Function
@@ -528,13 +537,17 @@ Resources:
       CodeUri: ../src/functions/grievance_agent/
       Handler: app.handler
       Timeout: 30
-      Description: "GrievanceAgent (Step 5) — grievance draft (stub)"
+      Description: "GrievanceAgent (Step 5) — grievance draft"
       LoggingConfig:
         LogGroup: !Ref GrievanceAgentFunctionLogGroup
       Environment:
         Variables:
           STAGE: !Ref Stage
-          USE_STUBS: "true"
+          USE_STUBS: "false"
+          GEMINI_SECRET_NAME: !Ref GeminiSecretName
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${GeminiSecretName}*"
 
   PersistRunFunction:
     Type: AWS::Serverless::Function

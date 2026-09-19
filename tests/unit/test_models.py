@@ -292,7 +292,7 @@ class TestAnalysisRun:
     _EXPIRES_AT = 1_800_000_000
 
     def _make_run(self, **overrides) -> AnalysisRun:
-        defaults = dict(claimId="claim-abc", expiresAt=self._EXPIRES_AT)
+        defaults = dict(claimId="claim-abc", correlationId="corr-123", expiresAt=self._EXPIRES_AT)
         defaults.update(overrides)
         return AnalysisRun.new(**defaults)
 
