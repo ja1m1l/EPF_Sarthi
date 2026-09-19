@@ -1,3 +1,1 @@
-boto3>=1.34
-pypdf>=4.0
-google-genai>=0.8
+# Dependencies provided by SharedLayer (google-genai, pypdf, pydantic)

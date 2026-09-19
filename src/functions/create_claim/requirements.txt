@@ -1,4 +1,1 @@
-# Runtime dependencies for the create_claim Lambda.
-# boto3 is provided by the Lambda runtime.
-# pydantic is bundled here so SAM packages it with this function.
-pydantic>=2.7,<3
+# Dependencies provided by SharedLayer (pydantic)

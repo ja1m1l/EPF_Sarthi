@@ -69,6 +69,7 @@ class TestPresignUpload(unittest.TestCase):
 
         mock_s3 = MagicMock()
         mock_s3.generate_presigned_post.return_value = presigned
+        mock_s3.generate_presigned_url.return_value = presigned["url"]
 
         def _boto3_client(service, **kwargs):
             if service == "dynamodb":

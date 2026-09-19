@@ -150,7 +150,7 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
 
     s3 = boto3.client("s3", region_name=os.environ.get("AWS_REGION", "ap-south-1"))
     try:
-        presigned = s3.generate_presigned_post(
+        presigned_post = s3.generate_presigned_post(
             Bucket=DOCS_BUCKET,
             Key=s3_key,
             Fields={"Content-Type": content_type},
@@ -158,6 +158,15 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
                 {"Content-Type": content_type},          # exact content-type
                 ["content-length-range", 1, 10_485_760], # 1 byte – 10 MB
             ],
+            ExpiresIn=PRESIGN_EXPIRY_SECONDS,
+        )
+        presigned_put = s3.generate_presigned_url(
+            ClientMethod="put_object",
+            Params={
+                "Bucket": DOCS_BUCKET,
+                "Key": s3_key,
+                "ContentType": content_type,
+            },
             ExpiresIn=PRESIGN_EXPIRY_SECONDS,
         )
     except (BotoCoreError, ClientError) as exc:
@@ -191,7 +200,9 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
 
     return _response(200, {
         "documentId": document_id,
-        "url":        presigned["url"],
-        "fields":     presigned["fields"],
+        "url":        presigned_put,
+        "uploadUrl":  presigned_put,
+        "postUrl":    presigned_post["url"],
+        "fields":     presigned_post["fields"],
         "expiresIn":  PRESIGN_EXPIRY_SECONDS,
     })
