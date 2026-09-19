@@ -1,0 +1,365 @@
+{
+  "Comment": "EPF Sentinel Analysis Pipeline — Step Functions Express Workflow. Runs five agent states in sequence, writes a final AnalysisRun to DynamoDB, and routes all failures to RecordFailure which persists the correct failure status (FAILED_VALIDATION or FAILED_INFRASTRUCTURE). COMPLETED_WITH_ABSTENTION is a valid terminal state, not a failure.",
+  "StartAt": "ClaimAgent",
+  "States": {
+
+    "ClaimAgent": {
+      "Type": "Task",
+      "Comment": "Step 1: Validate and normalise the raw Claim into an AnalysisInput. Raises ValidationError on bad input — caught and never retried.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${ClaimAgentFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "correlationId.$": "$.Payload.correlationId",
+        "runId.$":         "$.Payload.runId",
+        "claimId.$":       "$.Payload.claimId",
+        "claim.$":         "$.Payload.claim",
+        "analysisInput.$": "$.Payload.analysisInput",
+        "startedAt.$":     "$.Payload.startedAt"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 10,
+      "Retry": [],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractClaimAgentError"
+        }
+      ],
+      "Next": "RulesAgent"
+    },
+
+    "ExtractClaimAgentError": {
+      "Type": "Pass",
+      "Comment": "Map the caught error into the standard failure envelope, distinguishing ValidationError from infrastructure errors.",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "RulesAgent": {
+      "Type": "Task",
+      "Comment": "Step 2: Invoke the real RulesAgent Lambda (or stub). Abstention (applicable=false) is a valid non-failure outcome.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${RulesAgentStepFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "correlationId.$": "$.Payload.correlationId",
+        "runId.$":         "$.Payload.runId",
+        "claimId.$":       "$.Payload.claimId",
+        "claim.$":         "$.Payload.claim",
+        "analysisInput.$": "$.Payload.analysisInput",
+        "rulesDecision.$": "$.Payload.rulesDecision",
+        "startedAt.$":     "$.Payload.startedAt"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 60,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractRulesAgentError"
+        }
+      ],
+      "Next": "SlaAgent"
+    },
+
+    "ExtractRulesAgentError": {
+      "Type": "Pass",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "SlaAgent": {
+      "Type": "Task",
+      "Comment": "Step 3: Compute SLA using the pure shared.sla module. Deterministic — no model, no stub needed.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${SlaAgentFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "correlationId.$": "$.Payload.correlationId",
+        "runId.$":         "$.Payload.runId",
+        "claimId.$":       "$.Payload.claimId",
+        "claim.$":         "$.Payload.claim",
+        "analysisInput.$": "$.Payload.analysisInput",
+        "rulesDecision.$": "$.Payload.rulesDecision",
+        "slaResult.$":     "$.Payload.slaResult",
+        "startedAt.$":     "$.Payload.startedAt"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 10,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractSlaAgentError"
+        }
+      ],
+      "Next": "EvidenceAgent"
+    },
+
+    "ExtractSlaAgentError": {
+      "Type": "Pass",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "EvidenceAgent": {
+      "Type": "Task",
+      "Comment": "Step 4: Retrieve supporting evidence (stub in this module).",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${EvidenceAgentFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "correlationId.$":  "$.Payload.correlationId",
+        "runId.$":          "$.Payload.runId",
+        "claimId.$":        "$.Payload.claimId",
+        "claim.$":          "$.Payload.claim",
+        "analysisInput.$":  "$.Payload.analysisInput",
+        "rulesDecision.$":  "$.Payload.rulesDecision",
+        "slaResult.$":      "$.Payload.slaResult",
+        "evidenceReport.$": "$.Payload.evidenceReport",
+        "startedAt.$":      "$.Payload.startedAt"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 30,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractEvidenceAgentError"
+        }
+      ],
+      "Next": "GrievanceAgent"
+    },
+
+    "ExtractEvidenceAgentError": {
+      "Type": "Pass",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "GrievanceAgent": {
+      "Type": "Task",
+      "Comment": "Step 5: Draft a grievance letter (stub in this module).",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${GrievanceAgentFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "correlationId.$":  "$.Payload.correlationId",
+        "runId.$":          "$.Payload.runId",
+        "claimId.$":        "$.Payload.claimId",
+        "claim.$":          "$.Payload.claim",
+        "analysisInput.$":  "$.Payload.analysisInput",
+        "rulesDecision.$":  "$.Payload.rulesDecision",
+        "slaResult.$":      "$.Payload.slaResult",
+        "evidenceReport.$": "$.Payload.evidenceReport",
+        "grievanceDraft.$": "$.Payload.grievanceDraft",
+        "startedAt.$":      "$.Payload.startedAt"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 30,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractGrievanceAgentError"
+        }
+      ],
+      "Next": "PersistRun"
+    },
+
+    "ExtractGrievanceAgentError": {
+      "Type": "Pass",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "PersistRun": {
+      "Type": "Task",
+      "Comment": "Write COMPLETED or COMPLETED_WITH_ABSTENTION AnalysisRun to DynamoDB with per-agent outputs, correlationId, and 90-day TTL.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${PersistRunFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "runId.$":         "$.Payload.runId",
+        "claimId.$":       "$.Payload.claimId",
+        "correlationId.$": "$.Payload.correlationId",
+        "status.$":        "$.Payload.status"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 15,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "Lambda.SdkClientException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["States.ALL"],
+          "ResultPath": "$.errorInfo",
+          "Next": "ExtractPersistRunError"
+        }
+      ],
+      "End": true
+    },
+
+    "ExtractPersistRunError": {
+      "Type": "Pass",
+      "Parameters": {
+        "correlationId.$": "$.correlationId",
+        "runId.$":         "$.runId",
+        "claimId.$":       "$.claimId",
+        "startedAt.$":     "$.startedAt",
+        "errorType.$":     "$.errorInfo.Error",
+        "errorMessage.$":  "$.errorInfo.Cause"
+      },
+      "Next": "RecordFailure"
+    },
+
+    "RecordFailure": {
+      "Type": "Task",
+      "Comment": "Error sink for all states. Maps errorType → FAILED_VALIDATION or FAILED_INFRASTRUCTURE. Never collapses abstention into failure.",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "${RecordFailureFunctionArn}",
+        "Payload.$": "$"
+      },
+      "ResultSelector": {
+        "runId.$":         "$.Payload.runId",
+        "claimId.$":       "$.Payload.claimId",
+        "correlationId.$": "$.Payload.correlationId",
+        "status.$":        "$.Payload.status"
+      },
+      "ResultPath": "$",
+      "TimeoutSeconds": 15,
+      "Retry": [
+        {
+          "ErrorEquals": [
+            "Lambda.ServiceException",
+            "Lambda.AWSLambdaException",
+            "Lambda.TooManyRequestsException",
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 2,
+          "BackoffRate": 2
+        }
+      ],
+      "End": true
+    }
+
+  }
+}

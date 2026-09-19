@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: EPF Sentinel - EPFO claim SLA tracker (Module 2.1 - rules ingestion + embeddings)
+Description: EPF Sentinel - EPFO claim SLA tracker (Module 2.4 - Step Functions analysis pipeline with stubbed agents)
 
 Globals:
   Function:
@@ -244,6 +244,66 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-rules-agent-${Stage}"
       RetentionInDays: 14
 
+  ClaimAgentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-claim-agent-${Stage}"
+      RetentionInDays: 14
+
+  RulesAgentStepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-rules-agent-step-${Stage}"
+      RetentionInDays: 14
+
+  SlaAgentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-sla-agent-${Stage}"
+      RetentionInDays: 14
+
+  EvidenceAgentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-evidence-agent-${Stage}"
+      RetentionInDays: 14
+
+  GrievanceAgentFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-grievance-agent-${Stage}"
+      RetentionInDays: 14
+
+  PersistRunFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-persist-run-${Stage}"
+      RetentionInDays: 14
+
+  RecordFailureFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-record-failure-${Stage}"
+      RetentionInDays: 14
+
+  StartAnalysisFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-start-analysis-${Stage}"
+      RetentionInDays: 14
+
+  GetRunFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-get-run-${Stage}"
+      RetentionInDays: 14
+
+  AnalysisSfnLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/states/epf-sentinel-analysis-${Stage}"
+      RetentionInDays: 14
+
   # ─── API Gateway HTTP API ────────────────────────────────────────────────
 
   HttpApi:
@@ -396,6 +456,254 @@ Resources:
             TableName: !Ref RuleChunksTable
         - CloudWatchPutMetricPolicy: {}
 
+  # ─── Step Functions Pipeline Lambdas ────────────────────────────────────
+
+  ClaimAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-claim-agent-${Stage}"
+      CodeUri: ../src/functions/claim_agent/
+      Handler: app.handler
+      Timeout: 10
+      Description: "ClaimAgent (Step 1) — validates Claim and produces AnalysisInput"
+      LoggingConfig:
+        LogGroup: !Ref ClaimAgentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          USE_STUBS: "true"
+
+  RulesAgentStepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-rules-agent-step-${Stage}"
+      CodeUri: ../src/functions/rules_agent_step/
+      Handler: app.handler
+      Timeout: 60
+      Description: "RulesAgentStep (Step 2) — SFN adapter for RulesAgent"
+      LoggingConfig:
+        LogGroup: !Ref RulesAgentStepFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          USE_STUBS: "true"
+          RULES_AGENT_FUNCTION_NAME: !Ref RulesAgentFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref RulesAgentFunction
+
+  SlaAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-sla-agent-${Stage}"
+      CodeUri: ../src/functions/sla_agent/
+      Handler: app.handler
+      Timeout: 10
+      Description: "SlaAgent (Step 3) — pure SLA computation"
+      LoggingConfig:
+        LogGroup: !Ref SlaAgentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+
+  EvidenceAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-evidence-agent-${Stage}"
+      CodeUri: ../src/functions/evidence_agent/
+      Handler: app.handler
+      Timeout: 30
+      Description: "EvidenceAgent (Step 4) — evidence retrieval (stub)"
+      LoggingConfig:
+        LogGroup: !Ref EvidenceAgentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          USE_STUBS: "true"
+
+  GrievanceAgentFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-grievance-agent-${Stage}"
+      CodeUri: ../src/functions/grievance_agent/
+      Handler: app.handler
+      Timeout: 30
+      Description: "GrievanceAgent (Step 5) — grievance draft (stub)"
+      LoggingConfig:
+        LogGroup: !Ref GrievanceAgentFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          USE_STUBS: "true"
+
+  PersistRunFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-persist-run-${Stage}"
+      CodeUri: ../src/functions/persist_run/
+      Handler: app.handler
+      Timeout: 15
+      Description: "PersistRun — writes completed AnalysisRun to DynamoDB (90-day TTL)"
+      LoggingConfig:
+        LogGroup: !Ref PersistRunFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisRunsTable
+
+  RecordFailureFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-record-failure-${Stage}"
+      CodeUri: ../src/functions/record_failure/
+      Handler: app.handler
+      Timeout: 15
+      Description: "RecordFailure — error sink; persists FAILED_VALIDATION or FAILED_INFRASTRUCTURE"
+      LoggingConfig:
+        LogGroup: !Ref RecordFailureFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisRunsTable
+
+  # ─── API Lambdas for analysis pipeline ─────────────────────────────────
+
+  StartAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-start-analysis-${Stage}"
+      CodeUri: ../src/functions/start_analysis/
+      Handler: app.handler
+      Timeout: 29
+      Description: "POST /claims/{claimId}/analyze — starts an Express SFN execution (JWT-protected)"
+      LoggingConfig:
+        LogGroup: !Ref StartAnalysisFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+          ANALYSIS_SFN_ARN: !Ref AnalysisSfn
+      Events:
+        StartAnalysisPost:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}/analyze
+            Method: POST
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisRunsTable
+        - StepFunctionsExecutionPolicy:
+            StateMachineName: !GetAtt AnalysisSfn.Name
+
+  GetRunFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-get-run-${Stage}"
+      CodeUri: ../src/functions/get_run/
+      Handler: app.handler
+      Timeout: 29
+      Description: "GET /claims/{claimId}/runs/{runId} — fetch one AnalysisRun (JWT-protected)"
+      LoggingConfig:
+        LogGroup: !Ref GetRunFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+      Events:
+        GetRunGet:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /claims/{claimId}/runs/{runId}
+            Method: GET
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AnalysisRunsTable
+
+  # ─── Step Functions Express State Machine ──────────────────────────────
+
+  AnalysisSfnRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "epf-sentinel-sfn-analysis-role-${Stage}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: states.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: InvokePipelineLambdas
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource:
+                  - !GetAtt ClaimAgentFunction.Arn
+                  - !GetAtt RulesAgentStepFunction.Arn
+                  - !GetAtt SlaAgentFunction.Arn
+                  - !GetAtt EvidenceAgentFunction.Arn
+                  - !GetAtt GrievanceAgentFunction.Arn
+                  - !GetAtt PersistRunFunction.Arn
+                  - !GetAtt RecordFailureFunction.Arn
+        - PolicyName: CloudWatchLogsDelivery
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogDelivery
+                  - logs:GetLogDelivery
+                  - logs:UpdateLogDelivery
+                  - logs:DeleteLogDelivery
+                  - logs:ListLogDeliveries
+                  - logs:PutLogEvents
+                  - logs:PutResourcePolicy
+                  - logs:DescribeResourcePolicies
+                  - logs:DescribeLogGroups
+                Resource: "*"
+
+  AnalysisSfn:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      Name: !Sub "epf-sentinel-analysis-${Stage}"
+      Type: EXPRESS
+      DefinitionUri: state_machine.asl.json
+      DefinitionSubstitutions:
+        ClaimAgentFunctionArn:    !GetAtt ClaimAgentFunction.Arn
+        RulesAgentStepFunctionArn: !GetAtt RulesAgentStepFunction.Arn
+        SlaAgentFunctionArn:      !GetAtt SlaAgentFunction.Arn
+        EvidenceAgentFunctionArn: !GetAtt EvidenceAgentFunction.Arn
+        GrievanceAgentFunctionArn: !GetAtt GrievanceAgentFunction.Arn
+        PersistRunFunctionArn:    !GetAtt PersistRunFunction.Arn
+        RecordFailureFunctionArn: !GetAtt RecordFailureFunction.Arn
+      Role: !GetAtt AnalysisSfnRole.Arn
+      Logging:
+        Destinations:
+          - CloudWatchLogsLogGroup:
+              LogGroupArn: !GetAtt AnalysisSfnLogGroup.Arn
+        IncludeExecutionData: true
+        Level: ALL
+
 Outputs:
   ApiEndpoint:
     Description: Base URL of the HTTP API
@@ -450,3 +758,21 @@ Outputs:
     Value: !GetAtt RulesAgentFunction.Arn
     Export:
       Name: !Sub "epf-sentinel-RulesAgentFunctionArn-${Stage}"
+
+  AnalysisSfnArn:
+    Description: ARN of the Express Step Functions analysis state machine
+    Value: !Ref AnalysisSfn
+    Export:
+      Name: !Sub "epf-sentinel-AnalysisSfnArn-${Stage}"
+
+  StartAnalysisFunctionArn:
+    Description: StartAnalysis Lambda Function ARN
+    Value: !GetAtt StartAnalysisFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-StartAnalysisFunctionArn-${Stage}"
+
+  GetRunFunctionArn:
+    Description: GetRun Lambda Function ARN
+    Value: !GetAtt GetRunFunction.Arn
+    Export:
+      Name: !Sub "epf-sentinel-GetRunFunctionArn-${Stage}"

@@ -1,0 +1,2 @@
+# PersistRun Lambda dependencies
+boto3>=1.34

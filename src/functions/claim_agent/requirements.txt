@@ -1,0 +1,3 @@
+# ClaimAgent Lambda dependencies
+# Shared layer provides: shared package, boto3
+# No additional deps needed

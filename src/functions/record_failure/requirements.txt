@@ -1,0 +1,2 @@
+# RecordFailure Lambda dependencies
+boto3>=1.34

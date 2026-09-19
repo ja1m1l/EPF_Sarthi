@@ -1,0 +1,2 @@
+# GrievanceAgent Lambda dependencies
+# No additional deps — shared layer provides everything

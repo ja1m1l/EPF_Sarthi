@@ -107,6 +107,23 @@ class ClaimStatus(str, Enum):
     SETTLED = "SETTLED"
 
 
+class AnalysisRunStatus(str, Enum):
+    """
+    Terminal status codes for an AnalysisRun.
+
+    Rules
+    -----
+    * These four values MUST NEVER be collapsed into fewer statuses.
+    * No metric, dashboard, or downstream consumer may aggregate
+      COMPLETED_WITH_ABSTENTION together with any FAILED_* status.
+    """
+
+    COMPLETED = "COMPLETED"
+    COMPLETED_WITH_ABSTENTION = "COMPLETED_WITH_ABSTENTION"
+    FAILED_INFRASTRUCTURE = "FAILED_INFRASTRUCTURE"
+    FAILED_VALIDATION = "FAILED_VALIDATION"
+
+
 # ─────────────────────────────────────────────────────────────
 # Claim
 # ─────────────────────────────────────────────────────────────
@@ -337,6 +354,76 @@ class RuleChunk:
 
 
 # ─────────────────────────────────────────────────────────────
+# AnalysisInput
+# ─────────────────────────────────────────────────────────────
+
+@dataclass
+class AnalysisInput:
+    """
+    Normalised view of a Claim produced by ClaimAgent.
+
+    Passed between Step Function states.  All money in paise (int).
+    """
+
+    claimId: str
+    userId: str
+    claimType: str          # string value of ClaimType enum
+    claimDateIso: str
+    amountPaise: int
+    status: str             # string value of ClaimStatus enum
+    deficiencyRaisedDateIso: Optional[str]
+    correlationId: str
+    normalizedAt: str       # ISO-8601 UTC
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        return d
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "AnalysisInput":
+        return cls(
+            claimId=d["claimId"],
+            userId=d["userId"],
+            claimType=d["claimType"],
+            claimDateIso=d["claimDateIso"],
+            amountPaise=_coerce_int(d["amountPaise"], "amountPaise"),
+            status=d["status"],
+            deficiencyRaisedDateIso=d.get("deficiencyRaisedDateIso"),
+            correlationId=d["correlationId"],
+            normalizedAt=d["normalizedAt"],
+        )
+
+
+# ─────────────────────────────────────────────────────────────
+# EvidenceReport
+# ─────────────────────────────────────────────────────────────
+
+@dataclass
+class EvidenceReport:
+    """
+    Structured output of EvidenceAgent.
+
+    In stub mode this is a fixed canned object.  In production it will
+    contain retrieved documents and relevance scores.
+    """
+
+    documents: list[dict]   # list of {title, url, relevanceScore}
+    summary: str
+    stubbed: bool = True
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+    @classmethod
+    def from_dict(cls, d: dict) -> "EvidenceReport":
+        return cls(
+            documents=list(d.get("documents", [])),
+            summary=str(d.get("summary", "")),
+            stubbed=bool(d.get("stubbed", True)),
+        )
+
+
+# ─────────────────────────────────────────────────────────────
 # AnalysisRun
 # ─────────────────────────────────────────────────────────────
 
@@ -362,19 +449,34 @@ class AnalysisRun:
     claimId: str
     runId: str
 
-    # Workflow state
-    status: str                # e.g. "RUNNING", "SUCCEEDED", "FAILED"
+    # Correlation ID — generated once at entry, threaded through all states
+    correlationId: str
+
+    # Workflow state — must be one of the four AnalysisRunStatus values
+    # (stored as str for backwards compatibility with DynamoDB)
+    status: str
     stepFunctionExecutionArn: Optional[str]
 
-    # Result payload (stored as a JSON string to avoid DynamoDB type friction)
-    resultJson: Optional[str]
+    # Per-agent outputs (stored as JSON strings to avoid DynamoDB type friction)
+    claimAgentOutputJson: Optional[str] = None
+    rulesAgentOutputJson: Optional[str] = None
+    slaAgentOutputJson: Optional[str] = None
+    evidenceAgentOutputJson: Optional[str] = None
+    grievanceAgentOutputJson: Optional[str] = None
+
+    # Failure detail (populated by RecordFailure state)
+    failureDetail: Optional[str] = None
+
+    # Legacy full-result blob (kept for backwards compat; populated by PersistRun
+    # as a merged snapshot of all agent outputs)
+    resultJson: Optional[str] = None
 
     # Timestamps (ISO-8601 with explicit +00:00)
-    startedAt: str
-    finishedAt: Optional[str]
+    startedAt: str = field(default_factory=utc_now_iso)
+    finishedAt: Optional[str] = None
 
     # TTL: Unix epoch seconds (int, not float)
-    expiresAt: int
+    expiresAt: int = 0
 
     # ── factory ──────────────────────────────────────────────
 
@@ -383,6 +485,7 @@ class AnalysisRun:
         cls,
         *,
         claimId: str,
+        correlationId: str,
         expiresAt: int,
         stepFunctionExecutionArn: Optional[str] = None,
     ) -> "AnalysisRun":
@@ -390,13 +493,14 @@ class AnalysisRun:
             raise TypeError(
                 f"expiresAt must be int (epoch seconds), got {type(expiresAt).__name__}"
             )
+        now = utc_now_iso()
         return cls(
             claimId=claimId,
             runId=str(uuid.uuid4()),
+            correlationId=correlationId,
             status="RUNNING",
             stepFunctionExecutionArn=stepFunctionExecutionArn,
-            resultJson=None,
-            startedAt=utc_now_iso(),
+            startedAt=now,
             finishedAt=None,
             expiresAt=expiresAt,
         )
@@ -411,10 +515,17 @@ class AnalysisRun:
         return cls(
             claimId=d["claimId"],
             runId=d["runId"],
+            correlationId=d.get("correlationId", ""),
             status=d["status"],
             stepFunctionExecutionArn=d.get("stepFunctionExecutionArn"),
+            claimAgentOutputJson=d.get("claimAgentOutputJson"),
+            rulesAgentOutputJson=d.get("rulesAgentOutputJson"),
+            slaAgentOutputJson=d.get("slaAgentOutputJson"),
+            evidenceAgentOutputJson=d.get("evidenceAgentOutputJson"),
+            grievanceAgentOutputJson=d.get("grievanceAgentOutputJson"),
+            failureDetail=d.get("failureDetail"),
             resultJson=d.get("resultJson"),
-            startedAt=d["startedAt"],
+            startedAt=d.get("startedAt", utc_now_iso()),
             finishedAt=d.get("finishedAt"),
             expiresAt=_coerce_int(d["expiresAt"], "expiresAt"),
         )
