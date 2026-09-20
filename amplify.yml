@@ -1,0 +1,38 @@
+# Amplify Hosting: the React app lives in frontend/, not the repo root.
+# Set these in the Amplify console (Environment variables). They are baked
+# into the bundle at build time. Never add a Gemini key here.
+#   VITE_API_BASE_URL
+#   VITE_COGNITO_USER_POOL_ID
+#   VITE_COGNITO_CLIENT_ID
+#   VITE_AWS_REGION
+#   VITE_EPFIGMS_URL
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm install 22
+        - nvm use 22
+        - npm ci --prefix frontend
+    build:
+      commands:
+        - nvm use 22
+        - npm run build --prefix frontend
+  artifacts:
+    baseDirectory: frontend/dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - frontend/node_modules/**/*
+  customHeaders:
+    - pattern: '**'
+      headers:
+        - key: 'X-Content-Type-Options'
+          value: 'nosniff'
+        - key: 'Referrer-Policy'
+          value: 'strict-origin-when-cross-origin'
+  redirects:
+    - source: '</^[^.]+$|\.(?!(css|gif|ico|jpg|js|png|txt|svg|woff|woff2|ttf|map|json|webp)$)([^.]+$)/>'
+      target: /index.html
+      status: '200'
