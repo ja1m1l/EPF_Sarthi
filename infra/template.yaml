@@ -175,6 +175,35 @@ Resources:
         AttributeName: expiresAt
         Enabled: true
 
+  # DynamoDB - StatusTransitions
+  StatusTransitionsTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-StatusTransitions-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: claimId
+          AttributeType: S
+        - AttributeName: transitionKey
+          AttributeType: S
+      KeySchema:
+        - AttributeName: claimId
+          KeyType: HASH
+        - AttributeName: transitionKey
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  # SNS - Status Notifications
+  StatusNotificationsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "epf-sentinel-status-notifications-${Stage}"
+
   # SQS - Document Events DLQ
   DocumentEventDLQ:
     Type: AWS::SQS::Queue
@@ -399,6 +428,12 @@ Resources:
     Type: AWS::Logs::LogGroup
     Properties:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-extract-document-${Stage}"
+      RetentionInDays: 14
+
+  SweepFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-sweep-${Stage}"
       RetentionInDays: 14
 
   AnalysisSfnLogGroup:
@@ -936,6 +971,78 @@ Resources:
               LogGroupArn: !GetAtt AnalysisSfnLogGroup.Arn
         IncludeExecutionData: true
         Level: ALL
+
+  # ─── Watchdog (Sweep) Function ──────────────────────────────────────────
+
+  SweepFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-sweep-${Stage}"
+      CodeUri: ../src/functions/sweep_function/
+      Handler: app.handler
+      Timeout: 300
+      MemorySize: 512
+      Description: "Daily watchdog that queries active claims and computes SLA"
+      LoggingConfig:
+        LogGroup: !Ref SweepFunctionLogGroup
+      Environment:
+        Variables:
+          STAGE: !Ref Stage
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+          STATUS_TRANSITIONS_TABLE_NAME: !Ref StatusTransitionsTable
+          STATUS_NOTIFICATIONS_TOPIC_ARN: !Ref StatusNotificationsTopic
+      Events:
+        SweepSchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(30 20 * * ? *) # 02:00 IST is 20:30 UTC
+            Name: !Sub "epf-sentinel-sweep-schedule-${Stage}"
+            Description: "Triggers SweepFunction daily at 02:00 IST"
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBReadPolicy:
+            TableName: !Ref AnalysisRunsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatusTransitionsTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt StatusNotificationsTopic.TopicName
+        - CloudWatchPutMetricPolicy: {}
+
+  SweepFunctionErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-sweep-errors-${Stage}"
+      AlarmDescription: "Triggers if SweepFunction throws an error"
+      Namespace: "AWS/Lambda"
+      MetricName: "Errors"
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref SweepFunction
+      Statistic: Sum
+      Period: 300 # 5 minutes
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+  SweepFunctionSilentStopAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-sweep-silent-stop-${Stage}"
+      AlarmDescription: "Triggers if SweepFunction hasn't successfully run in 26 hours"
+      Namespace: "AWS/Lambda"
+      MetricName: "Invocations"
+      Dimensions:
+        - Name: FunctionName
+          Value: !Ref SweepFunction
+      Statistic: Sum
+      Period: 93600 # 26 hours in seconds
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: LessThanThreshold
+      TreatMissingData: breaching
 
 Outputs:
   ApiEndpoint:
