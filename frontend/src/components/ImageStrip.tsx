@@ -1,10 +1,10 @@
 const FRAMES = [
-  { src: '/hero/epf-loop-campus.png', alt: 'A civic campus under a clear sky' },
-  { src: '/hero/epf-loop-clocktower.png', alt: 'A clock tower for watching a deadline' },
-  { src: '/hero/epf-loop-sunrise.png', alt: 'Sunrise over still water' },
-  { src: '/hero/epf-loop-sentinel.png', alt: 'A lighthouse standing watch' },
-  { src: '/hero/epf-loop-file.png', alt: 'A claim file and pen on a desk' },
-  { src: '/hero/epf-loop-deadline.png', alt: 'A desk clock and register' },
+  { src: '/hero/provident_fund_documents.jpg', alt: 'A stack of official Provident Fund documents' },
+  { src: '/hero/time_tracking_clock.jpg', alt: 'A desk clock next to a financial dashboard' },
+  { src: '/hero/epf_office_building.jpg', alt: 'A modern government office building' },
+  { src: '/hero/digital_claim_approval.jpg', alt: 'Laptop screen displaying Claim Approved' },
+  { src: '/hero/financial_security_shield.jpg', alt: 'A conceptual glass shield over banknotes' },
+  { src: '/hero/calendar_deadline_marked.jpg', alt: 'A desk calendar with a circled deadline' },
 ] as const;
 
 function FrameRow() {

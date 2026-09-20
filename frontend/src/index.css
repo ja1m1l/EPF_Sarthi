@@ -19,9 +19,13 @@ body,
 }
 
 body {
-  font-family: var(--font-serif);
+  font-family: "Instrument Serif", ui-serif, Georgia, serif;
   background: #ffffff;
   overflow-x: hidden;
+}
+
+* {
+  font-family: "Instrument Serif", ui-serif, Georgia, serif;
 }
 
 @keyframes epf-marquee {
