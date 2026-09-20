@@ -1,4 +1,4 @@
-﻿# EPF Sarthi
+# EPF Sarthi
 
 **Your EPFO claim is overdue. EPF Sarthi tells you exactly why, by how many days, and what to say about it.**
 
@@ -50,76 +50,101 @@ EPF Sarthi is a serverless web application that takes a member's claim details a
 
 ## Architecture
 
-```
-Browser (React + Vite)
-        |
-        |  HTTPS (Cognito JWT)
-        v
-API Gateway HTTP API
-        |
-   +----+---------------------------------------------+
-   |                Lambda Functions                   |
-   |  POST /claims          --> create_claim           |
-   |  GET  /claims          --> list_claims            |
-   |  GET  /claims/{id}     --> get_claim              |
-   |  POST /documents/presign --> presign_upload       |
-   |  POST /claims/{id}/analyze --> start_analysis     |
-   |  GET  /runs/{id}       --> get_run                |
-   |  DELETE /account       --> delete_account         |
-   +----+---------------------------------------------+
-        |
-        |  S3 presigned PUT (document upload)
-        v
-   S3 Bucket (epf-sentinel-docs)
-        |
-        |  S3:ObjectCreated --> SQS --> extract_document
-        v
-   ExtractDocument Lambda
-   +-- PDF: pypdf text layer
-   +-- Image / PDF fallthrough: Gemini vision --> text
-        |
-        |  Stores extracted text in DynamoDB Documents table
-        v
-   start_analysis Lambda
-        |
-        |  StartExecution (Express Workflow)
-        v
-+--------------------------------------------------+
-|        Step Functions Express Workflow           |
-|                                                  |
-|  1. ClaimAgent       <- Gemini (normalise input) |
-|         |                                        |
-|  2. RulesAgent  <- embed_query -> DynamoDB scan  |
-|         |         -> Gemini (select rule)        |
-|         |         -> code guards (grounding)     |
-|         |                                        |
-|  3. SlaAgent    <- pure Python arithmetic        |
-|         |                                        |
-|  4. EvidenceAgent <- Gemini (5 checks)           |
-|         |          -> verbatim substring guard   |
-|         |                                        |
-|  5. GrievanceAgent <- PII redact -> Gemini draft |
-|         |           -> grounding check           |
-|         |                                        |
-|  6. PersistRun  -> DynamoDB AnalysisRuns         |
-|         |                                        |
-|  [any error] -> RecordFailure -> DynamoDB        |
-+--------------------------------------------------+
-        |
-        |  EventBridge (daily cron)
-        v
-   SweepFunction Lambda  (nightly SLA re-check)
+```mermaid
+graph TD
+    subgraph ClientAuth["Client & Authentication"]
+        Client["React 19 + Vite SPA<br>(AWS Amplify Hosting)"]
+        Cognito["Amazon Cognito User Pool<br>(JWT Authorizer)"]
+    end
 
-Data stores (all DynamoDB, on-demand billing, no VPC):
-  +-- Claims         PK: userId  SK: claimId
-  +-- Documents      PK: userId  SK: documentId   (TTL 30d via S3 lifecycle)
-  +-- RuleChunks     PK: ruleSetVersion  SK: chunkId  (vector store)
-  +-- AnalysisRuns   PK: claimId  SK: runId  (TTL 90d)
-  +-- AnalysisQuota  PK: userId  SK: date  (daily cap counter)
+    subgraph Gateway["API Gateway Layer"]
+        APIGW["API Gateway (HTTP API)"]
+    end
 
-AI layer: Google Gemini API (generation + embedding)
-  +-- shared/gemini.py -- single client, key from Secrets Manager,
-      retry on 429/5xx only, cold-start cached in module scope
+    subgraph LambdaAPI["API Lambda Functions"]
+        L_Claims["Claims API<br>(create / list / get / delete)"]
+        L_Presign["presign_upload Lambda"]
+        L_Start["start_analysis Lambda<br>(Enforces 20/day Quota)"]
+        L_Run["get_run / get_document Lambda"]
+    end
+
+    subgraph Ingestion["Document Ingestion Pipeline"]
+        S3[("S3 Bucket: epf-sentinel-docs<br>(Presigned PUT)")]
+        SQS["SQS Processing Queue"]
+        L_Extract["extract_document Lambda<br>(pypdf / Gemini Vision OCR)"]
+    end
+
+    subgraph StepFunctions["Step Functions Express Workflow (5-Agent AI Pipeline)"]
+        direction TB
+        A1["1. ClaimAgent<br>(Gemini: Normalization)"]
+        A2["2. RulesAgent<br>(Gemini Embed + Vector Search)"]
+        A3["3. SlaAgent<br>(Pure Python SLA Engine)"]
+        A4["4. EvidenceAgent<br>(Gemini Document Verification)"]
+        A5["5. GrievanceAgent<br>(PII Redact & Draft)"]
+        P_Run["6. PersistRun State"]
+        P_Fail["RecordFailure State"]
+
+        A1 --> A2
+        A2 --> A3
+        A3 --> A4
+        A4 --> A5
+        A5 --> P_Run
+        A1 -.-> P_Fail
+        A2 -.-> P_Fail
+        A4 -.-> P_Fail
+        A5 -.-> P_Fail
+    end
+
+    subgraph CronJob["Scheduled Automation"]
+        Cron["EventBridge Cron (Nightly)"]
+        L_Sweep["sweep_function Lambda<br>(Nightly SLA Re-check)"]
+    end
+
+    subgraph Storage["DynamoDB Storage (On-Demand)"]
+        DB_Claims[("Claims Table<br>PK: userId | SK: claimId")]
+        DB_Docs[("Documents Table<br>PK: userId | SK: documentId")]
+        DB_Rules[("RuleChunks Table<br>PK: ruleSetVersion | SK: chunkId")]
+        DB_Runs[("AnalysisRuns Table<br>PK: claimId | SK: runId")]
+        DB_Quota[("AnalysisQuota Table<br>PK: userId | SK: date")]
+    end
+
+    subgraph AIServices["AI & Security Layer"]
+        Secrets["AWS Secrets Manager<br>(Gemini API Key)"]
+        Gemini_Flash["Google Gemini 3.6 Flash<br>(Text & Vision)"]
+        Gemini_Embed["Google Gemini Embedding<br>(3072-dim)"]
+    end
+
+    Client -->|"HTTPS (Cognito JWT)"| APIGW
+    APIGW --> Cognito
+    APIGW --> L_Claims
+    APIGW --> L_Presign
+    APIGW --> L_Start
+    APIGW --> L_Run
+
+    Client -->|"Direct Upload (PUT)"| S3
+    S3 -->|"ObjectCreated Event"| SQS
+    SQS --> L_Extract
+    L_Extract -->|"Save Extracted Text"| DB_Docs
+
+    L_Claims --> DB_Claims
+    L_Start -->|"Check Daily Cap"| DB_Quota
+    L_Start -->|"StartExecution"| A1
+    L_Run --> DB_Runs
+
+    A1 --> Gemini_Flash
+    A2 --> Gemini_Embed
+    A2 -->|"Cosine Retrieval"| DB_Rules
+    A2 --> Gemini_Flash
+    A4 --> Gemini_Flash
+    A5 --> Gemini_Flash
+    P_Run -->|"Save Output"| DB_Runs
+    P_Fail -->|"Record Failure"| DB_Runs
+
+    Cron --> L_Sweep
+    L_Sweep --> DB_Claims
+    L_Sweep --> A1
+
+    Secrets -.->|"Fetch API Key"| Gemini_Flash
 ```
 
 ---
