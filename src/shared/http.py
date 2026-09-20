@@ -109,6 +109,14 @@ def not_found() -> dict:
     )
 
 
+def too_many_requests(code: str, message: str) -> dict:
+    """429 Too Many Requests — per-user daily analysis cap."""
+    return _response(
+        429,
+        {"error": {"code": code, "message": message}},
+    )
+
+
 def internal_error() -> dict:
     """
     500 Internal Server Error.

@@ -1,0 +1,10 @@
+{
+  "secretNames": [
+    "epf-sentinel/gemini-api-key"
+  ],
+  "prodStack": {
+    "exists": false,
+    "error": "An error occurred (ValidationError) when calling the DescribeStacks operation: Stack with id epf-sentinel-prod does not exist"
+  },
+  "conclusion": "No prod stack was deployed because the separate prod Gemini secret does not exist. A second deploy output cannot truthfully be supplied."
+}

@@ -28,6 +28,7 @@ from google import genai
 from google.genai import types as genai_types
 
 from shared.logging import get_logger
+from shared.metrics import gemini_call
 
 log = get_logger(__name__)
 
@@ -133,6 +134,32 @@ def _is_retryable(exc: Exception) -> bool:
     return False
 
 
+def _is_daily_quota(exc: Exception) -> bool:
+    """
+    Free-tier *per-day* 429s do not recover inside a request.
+
+    Retrying them burns remaining quota and still fails. Transient
+    per-minute 429s remain retryable.
+    """
+    msg = str(exc).lower()
+    return any(
+        token in msg
+        for token in ("per day", "perday", "daily", "free_tier", "free tier", "limit: 0")
+    )
+
+
+def _status_code(exc: Exception) -> Optional[int]:
+    raw = getattr(exc, "code", None) or getattr(exc, "status_code", None)
+    if raw is None:
+        if "429" in str(exc) or type(exc).__name__ in ("ResourceExhausted", "TooManyRequests"):
+            return 429
+        return None
+    try:
+        return int(raw)
+    except (TypeError, ValueError):
+        return None
+
+
 def _retry(fn, *args, **kwargs):
     """
     Call *fn* with bounded exponential backoff + jitter.
@@ -149,13 +176,13 @@ def _retry(fn, *args, **kwargs):
         try:
             return fn(*args, **kwargs)
         except Exception as exc:
-            if not _is_retryable(exc) or attempt == max_retries:
+            if _is_daily_quota(exc) or not _is_retryable(exc) or attempt == max_retries:
                 raise
             last_exc = exc
             delay = min(base * (2 ** attempt), cap) + random.uniform(-jitter, jitter)
-            # If 429 rate limit / quota exhaustion, back off sufficiently for quota token replenishment
-            if getattr(exc, "code", None) == 429 or "429" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc):
-                delay = max(delay, 12.0 + random.uniform(0.5, 2.0))
+            # Transient per-minute 429s: jittered backoff, still bounded.
+            if _status_code(exc) == 429 or "RESOURCE_EXHAUSTED" in str(exc):
+                delay = max(delay, 2.0 + random.uniform(0.1, 1.0))
             delay = max(0.1, delay)
             log.warning(
                 "gemini.retry",
@@ -206,10 +233,15 @@ def embed(texts: list[str]) -> list[list[float]]:
             contents=texts,
         )
 
-    response = _retry(_call)
+    try:
+        response = _retry(_call)
+    except Exception as exc:
+        gemini_call(latency_ms=(time.monotonic() - t0) * 1000, error=True, status_code=_status_code(exc))
+        raise
     elapsed = time.monotonic() - t0
 
     vectors = [emb.values for emb in response.embeddings]
+    gemini_call(latency_ms=elapsed * 1000)
 
     # Log per-call metrics
     log.info(
@@ -290,20 +322,28 @@ def generate(
         return client.models.generate_content(**kwargs)
 
     try:
-        response = _retry(lambda: _call(model))
+        try:
+            response = _retry(lambda: _call(model))
+        except Exception as exc:
+            # Per-day quota and 5xx outages stay infrastructure failures.
+            # Only a retired-model 404 may fall back to another generation id.
+            if _is_daily_quota(exc) or _status_code(exc) == 429:
+                raise
+            if "404" in str(exc) or "NOT_FOUND" in str(exc):
+                fallback_model = "gemini-3.5-flash-lite" if model != "gemini-3.5-flash-lite" else "gemini-3.6-flash"
+                log.warning(
+                    "gemini.generate.fallback",
+                    pinnedModel=model,
+                    toModel=fallback_model,
+                    reason=str(exc),
+                )
+                response = _retry(lambda: _call(fallback_model))
+                served_model = fallback_model
+            else:
+                raise
     except Exception as exc:
-        if "404" in str(exc) or "NOT_FOUND" in str(exc) or "RESOURCE_EXHAUSTED" in str(exc) or "429" in str(exc):
-            fallback_model = "gemini-3.5-flash-lite" if model != "gemini-3.5-flash-lite" else "gemini-3.6-flash"
-            log.warning(
-                "gemini.generate.fallback",
-                pinnedModel=model,
-                toModel=fallback_model,
-                reason=str(exc),
-            )
-            response = _retry(lambda: _call(fallback_model))
-            served_model = fallback_model
-        else:
-            raise
+        gemini_call(latency_ms=(time.monotonic() - t0) * 1000, error=True, status_code=_status_code(exc))
+        raise
     elapsed = time.monotonic() - t0
 
     text = response.text or ""
@@ -313,6 +353,8 @@ def generate(
     prompt_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
     candidates_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
     total_tokens = getattr(usage, "total_token_count", 0) if usage else 0
+
+    gemini_call(latency_ms=elapsed * 1000, tokens=int(total_tokens or 0))
 
     log.info(
         "gemini.generate.completed",
@@ -400,7 +442,11 @@ def generate_multimodal(
             config=config,
         )
 
-    response = _retry(_call)
+    try:
+        response = _retry(_call)
+    except Exception as exc:
+        gemini_call(latency_ms=(time.monotonic() - t0) * 1000, error=True, status_code=_status_code(exc))
+        raise
     elapsed = time.monotonic() - t0
 
     text = response.text or ""
@@ -409,6 +455,8 @@ def generate_multimodal(
     prompt_tokens = getattr(usage, "prompt_token_count", 0) if usage else 0
     candidates_tokens = getattr(usage, "candidates_token_count", 0) if usage else 0
     total_tokens = getattr(usage, "total_token_count", 0) if usage else 0
+
+    gemini_call(latency_ms=elapsed * 1000, tokens=int(total_tokens or 0))
 
     log.info(
         "gemini.generate_multimodal.completed",

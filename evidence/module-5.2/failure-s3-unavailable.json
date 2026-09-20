@@ -1,0 +1,13 @@
+{
+  "induction": "Exact test object key denied by a temporary S3 bucket policy; policy deleted immediately after the PUT.",
+  "presignStatusCode": 200,
+  "objectKey": "01634dba-6071-700d-baeb-d660c29fdbe7/f30180f0-5f8c-4754-b792-0c4020838a85/6ef4b647-cebe-4b76-b125-19e4b436048a.png",
+  "rawS3Status": 403,
+  "rawS3Response": "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Error><Code>AccessDenied</Code><Message>User: arn:aws:sts::814454905497:assumed-role/epf-sentinel-dev-PresignUploadFunctionRole-8bD7CsduO5TN/epf-sentinel-presign-upload-dev is not authorized to perform: s3:PutObject on resource: \"arn:aws:s3:::epf-sentinel-docs-dev-814454905497/01634dba-6071-700d-baeb-d660c29fdbe7/f30180f0-5f8c-4754-b792-0c4020838a85/6ef4b647-cebe-4b76-b125-19e4b436048a.png\" with an explicit deny in a resource-based policy</Message><RequestId>RW6V2W1S8QKP39BT</RequestId><HostId>Hd8SP3AtbY0+TC67z57w/rj5sHc57tCapF3CJr8jvPuEqAzvXG37n7hLnxzEi9BegOcOCz5ZRyqZawLZ+a/p2I6m96KGIKLV</HostId></Error>",
+  "userVisibleResponse": {
+    "error": {
+      "code": "UPLOAD_FAILED",
+      "message": "Upload failed for failure-demo.png."
+    }
+  }
+}

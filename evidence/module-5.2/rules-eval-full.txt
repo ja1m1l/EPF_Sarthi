@@ -1,0 +1,87 @@
+Loaded 38 evaluation cases from rules_eval.jsonl
+Rule set version: v1
+Rate-limit pacing delay: 0.0s per case
+Executing evaluation with live Gemini API...
+
+[01/38] Evaluating NORM-01 (NORMAL)...{"ts": "2026-09-20T05:43:03.279058+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "38a46fe2-d0c8-4527-86ad-d7453b44b329", "event": "Found credentials in shared credentials file: ~/.aws/credentials"}
+{"ts": "2026-09-20T05:43:03.429092+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "340acb34-fa3b-4cdd-bc17-7102438a50f2", "event": "gemini.api_key.loaded", "secretName": "epf-sentinel/gemini-api-key", "region": "ap-south-1"}
+{"ts": "2026-09-20T05:43:04.112586+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "44334c5c-adaf-4ae2-9358-dc840a91c418", "event": "HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents \"HTTP/1.1 200 OK\""}
+{"ts": "2026-09-20T05:43:04.374887+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "867923df-e381-47a5-8e2b-30bda47d3e8b", "event": "gemini.embed.completed", "model": "gemini-embedding-001", "inputCount": 1, "outputDim": 3072, "latencySec": 0.569}
+{"ts": "2026-09-20T05:43:04.403363+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "641ee90a-a53e-4b99-84e8-baf77282b2dc", "event": "retrieval.scan.start", "ruleSetVersion": "v1", "tableName": "epf-sentinel-RuleChunks-dev"}
+{"ts": "2026-09-20T05:43:04.736323+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "971728be-acdd-44ca-9263-0b457336ff51", "event": "retrieval.scan.completed", "ruleSetVersion": "v1", "chunkCount": 16}
+{"ts": "2026-09-20T05:43:04.739360+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "6989d8d2-c9d4-4c54-a9ae-8b40e1e9d4d6", "event": "retrieval.search.completed", "ruleSetVersion": "v1", "totalChunks": 16, "k": 8, "topScore": 0.8039}
+{"ts": "2026-09-20T05:43:04.745127+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "0984f0b7-2450-458e-8aba-d85d281c54a4", "event": "AFC is enabled with max remote calls: 10."}
+{"ts": "2026-09-20T05:43:04.745190+00:00", "level": "WARNING", "service": "epf-sentinel", "correlationId": "d7a8f9f8-0827-4bae-a8dc-05d900c1d0b6", "event": "Direct use of automatic function calling (AFC) in Models.generate_content is not recommended. Instead, we recommend to use AFC in Chat.send_message. Similarly, direct use of AFC in Models.generate_content_stream is not recommended. Instead, we recommend to use AFC in Chat.send_message_stream."}
+{"ts": "2026-09-20T05:43:05.208508+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "d38b2b0b-12b5-49dc-9801-fe56b09e6471", "event": "HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent \"HTTP/1.1 429 Too Many Requests\""}
+{"ts": "2026-09-20T05:43:05.523739+00:00", "level": "ERROR", "service": "epf-sentinel", "correlationId": "654e9001-9ac2-4fe1-8140-078a7076178b", "event": "rules_agent.gemini_call.failed", "attempt": 0, "error": "429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\\nPlease retry in 54.822714728s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '54s'}]}}"}
+Traceback (most recent call last):
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/rules_agent.py", line 525, in select_rule
+    raw_response_text = gemini.generate(
+        user_prompt,
+        system_instruction=system_instruction,
+        response_schema=RULE_DECISION_SCHEMA,
+    )
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 326, in generate
+    response = _retry(lambda: _call(model))
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 177, in _retry
+    return fn(*args, **kwargs)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 326, in <lambda>
+    response = _retry(lambda: _call(model))
+                              ~~~~~^^^^^^^
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 322, in _call
+    return client.models.generate_content(**kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/models.py", line 6270, in generate_content
+    response = self._generate_content(
+        model=model, contents=contents, config=parsed_config_to_call
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/models.py", line 4707, in _generate_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1750, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1537, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 477, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 378, in iter
+    result = action(retry_state)
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 420, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 187, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 480, in __call__
+    result = fn(*args, **kwargs)
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1514, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/errors.py", line 173, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/errors.py", line 202, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 54.822714728s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '54s'}]}}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 346, in <module>
+    main()
+    ~~~~^^
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 160, in main
+    res = evaluate_case(case, args.rule_set_version)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 48, in evaluate_case
+    decision: RuleDecision = select_rule(claim, rule_set_version=rule_set_version)
+                             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/rules_agent.py", line 533, in select_rule
+    raise RulesAgentInfrastructureError(f"Gemini generation API failed: {exc}") from exc
+shared.rules_agent.RulesAgentInfrastructureError: Gemini generation API failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.6-flash\nPlease retry in 54.822714728s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.6-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '54s'}]}}

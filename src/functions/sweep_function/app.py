@@ -37,12 +37,19 @@ sns = boto3.client("sns")
 def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
     correlation_id = str(uuid.uuid4())
     set_correlation_id(correlation_id)
+
+    claims_table_name = os.environ.get("CLAIMS_TABLE_NAME", CLAIMS_TABLE_NAME)
+    runs_table_name = os.environ.get("ANALYSIS_RUNS_TABLE_NAME", ANALYSIS_RUNS_TABLE_NAME)
+    transitions_table_name = os.environ.get(
+        "STATUS_TRANSITIONS_TABLE_NAME",
+        STATUS_TRANSITIONS_TABLE_NAME,
+    )
     
     log.info("sweep_function.started", correlationId=correlation_id, stage=STAGE)
     
-    claims_table = dynamodb.Table(CLAIMS_TABLE_NAME)
-    runs_table = dynamodb.Table(ANALYSIS_RUNS_TABLE_NAME)
-    transitions_table = dynamodb.Table(STATUS_TRANSITIONS_TABLE_NAME)
+    claims_table = dynamodb.Table(claims_table_name)
+    runs_table = dynamodb.Table(runs_table_name)
+    transitions_table = dynamodb.Table(transitions_table_name)
     
     today = today_ist()
     

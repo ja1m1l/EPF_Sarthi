@@ -78,7 +78,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "Catch": [
@@ -136,7 +137,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "Catch": [
@@ -194,7 +196,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "Catch": [
@@ -253,7 +256,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "Catch": [
@@ -306,7 +310,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "Catch": [
@@ -358,7 +363,8 @@
           ],
           "IntervalSeconds": 2,
           "MaxAttempts": 2,
-          "BackoffRate": 2
+          "BackoffRate": 2,
+          "JitterStrategy": "FULL"
         }
       ],
       "End": true

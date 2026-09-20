@@ -22,8 +22,10 @@ from boto3.dynamodb.types import TypeDeserializer
 from botocore.exceptions import BotoCoreError, ClientError
 from decimal import Decimal
 
-from shared.http import internal_error, not_found, ok, _response
+from shared.clock import today_ist
+from shared.http import internal_error, not_found, ok, too_many_requests, _response
 from shared.logging import get_logger, set_correlation_id
+from shared.metrics import analysis_started, daily_cap_hit
 from shared.models import AnalysisRun, Claim, utc_now_iso
 
 log = get_logger(__name__)
@@ -37,6 +39,8 @@ DOCUMENTS_TABLE: str = os.environ.get(
     "DOCUMENTS_TABLE_NAME", f"epf-sentinel-Documents-{STAGE}"
 )
 STATE_MACHINE_ARN: str = os.environ.get("ANALYSIS_SFN_ARN", "")
+QUOTA_TABLE: str = os.environ.get("ANALYSIS_QUOTA_TABLE_NAME", "")
+DAILY_ANALYSIS_CAP: int = int(os.environ.get("DAILY_ANALYSIS_CAP", "20"))
 TTL_90_DAYS: int = 90 * 24 * 60 * 60
 
 # Only EXTRACTED documents carry text the EvidenceAgent's substring check can
@@ -162,6 +166,40 @@ def _fetch_documents(user_id: str, claim_id: str) -> list[dict[str, Any]]:
     return documents
 
 
+def _consume_daily_quota(user_id: str) -> bool:
+    """
+    Increment today's analysis count for this user.
+
+    Returns False when the per-user daily cap is already exhausted.
+    Disabled when ANALYSIS_QUOTA_TABLE_NAME is unset (unit tests).
+    """
+    if not QUOTA_TABLE or DAILY_ANALYSIS_CAP <= 0:
+        return True
+
+    day = today_ist().isoformat()
+    expires_at = int(time.time()) + 3 * 24 * 60 * 60
+    ddb = boto3.resource("dynamodb")
+    table = ddb.Table(QUOTA_TABLE)
+    try:
+        table.update_item(
+            Key={"userId": user_id, "dayIso": day},
+            UpdateExpression="ADD analysisCount :one SET expiresAt = if_not_exists(expiresAt, :ttl)",
+            ConditionExpression="attribute_not_exists(analysisCount) OR analysisCount < :cap",
+            ExpressionAttributeValues={
+                ":one": 1,
+                ":cap": DAILY_ANALYSIS_CAP,
+                ":ttl": expires_at,
+            },
+        )
+        return True
+    except ClientError as exc:
+        if exc.response.get("Error", {}).get("Code") == "ConditionalCheckFailedException":
+            daily_cap_hit()
+            log.warning("start_analysis.daily_cap_hit", userId=user_id, dayIso=day, cap=DAILY_ANALYSIS_CAP)
+            return False
+        raise
+
+
 def _save_run(run: AnalysisRun, claim: dict) -> None:
     """Persist initial RUNNING run record to DynamoDB."""
     ddb = boto3.client("dynamodb")
@@ -214,6 +252,16 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
 
     if not raw_item:
         return not_found()
+
+    try:
+        if not _consume_daily_quota(user_id):
+            return too_many_requests(
+                "ANALYSIS_CAP_EXCEEDED",
+                f"Daily analysis cap of {DAILY_ANALYSIS_CAP} has been reached. Try again tomorrow.",
+            )
+    except (BotoCoreError, ClientError) as exc:
+        log.error("start_analysis.quota.failed", correlationId=correlation_id, error=str(exc))
+        return internal_error()
 
     claim_dict = _unmarshal_claim(raw_item)
 
@@ -291,6 +339,7 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
         # Execution already started — best-effort save failure only logged
         return internal_error()
 
+    analysis_started()
     log.info(
         "start_analysis.started",
         correlationId=correlation_id,

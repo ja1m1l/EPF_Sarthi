@@ -1,0 +1,27 @@
+{
+  "induction": "Real AnalysisQuota table temporarily changed to 1 WCU and saturated; Lambda AWS SDK max attempts temporarily set to 1. All settings restored.",
+  "hammerStats": {
+    "successfulWrites": 1639,
+    "throttledWrites": 8492
+  },
+  "rawLambdaTailLogs": [
+    "START RequestId: b3a74ff9-185c-4fb0-afe5-6282856467ae Version: $LATEST",
+    "{\"ts\": \"2026-09-20T05:40:43.959496+00:00\", \"level\": \"INFO\", \"service\": \"epf-sentinel\", \"correlationId\": \"69368474-5f16-4eb7-bcdf-7ed61a2a7070\", \"event\": \"start_analysis.request.received\", \"stage\": \"dev\"}",
+    "{\"ts\": \"2026-09-20T05:40:44.203717+00:00\", \"level\": \"ERROR\", \"service\": \"epf-sentinel\", \"correlationId\": \"69368474-5f16-4eb7-bcdf-7ed61a2a7070\", \"event\": \"start_analysis.quota.failed\", \"error\": \"An error occurred (ProvisionedThroughputExceededException) when calling the UpdateItem operation (reached max retries: 0): The level of configured provisioned throughput for the table was exceeded. Consider increasing your provisioning level with the UpdateTable API.\"}",
+    "END RequestId: b3a74ff9-185c-4fb0-afe5-6282856467ae",
+    "REPORT RequestId: b3a74ff9-185c-4fb0-afe5-6282856467ae Duration: 270.46 ms Billed Duration: 271 ms Memory Size: 256 MB Max Memory Used: 91 MB"
+  ],
+  "userVisibleResponse": {
+    "statusCode": 500,
+    "headers": {
+      "Content-Type": "application/json",
+      "Cache-Control": "no-store"
+    },
+    "body": {
+      "error": {
+        "code": "INTERNAL_ERROR",
+        "message": "An unexpected error occurred"
+      }
+    }
+  }
+}

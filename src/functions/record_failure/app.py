@@ -44,6 +44,7 @@ import boto3
 from botocore.exceptions import BotoCoreError, ClientError
 
 from shared.logging import get_logger, set_correlation_id
+from shared.metrics import analysis_status
 from shared.models import AnalysisRunStatus, utc_now_iso
 
 log = get_logger(__name__)
@@ -129,9 +130,24 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
             error=str(exc),
         )
 
+    analysis_status(final_status, _latency_ms(event.get("startedAt")))
+
     return {
         "runId": run_id,
         "claimId": claim_id,
         "correlationId": correlation_id,
         "status": final_status,
     }
+
+
+def _latency_ms(started_at: str | None) -> float | None:
+    if not started_at:
+        return None
+    try:
+        from datetime import datetime
+
+        start = datetime.fromisoformat(started_at.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(utc_now_iso())
+        return max(0.0, (end - start).total_seconds() * 1000)
+    except (TypeError, ValueError):
+        return None

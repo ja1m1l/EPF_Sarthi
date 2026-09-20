@@ -91,6 +91,12 @@ class TestApiKeyLoading:
 # ─────────────────────────────────────────────────────────────
 
 class TestRetryLogic:
+    def test_daily_quota_429_is_not_retryable_path(self):
+        from shared.gemini import _is_daily_quota
+
+        exc = Exception("limit: 0 (free_tier per day)")
+        assert _is_daily_quota(exc) is True
+
     def test_is_retryable_429(self):
         from shared.gemini import _is_retryable
         exc = Exception("rate limited")

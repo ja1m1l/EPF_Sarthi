@@ -48,8 +48,8 @@ def _create_demo_claim(api_endpoint: str, access_token: str) -> dict:
     today_iso = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
     payload = {
         "claimType": "FINAL_SETTLEMENT",
-        "claimDateIso": today_iso,
-        "amountPaise": 100000,  # INR 1,000.00
+        "claimDate": today_iso,
+        "amountRupees": 1000,
         "status": "SUBMITTED",
     }
     resp = requests.post(
@@ -267,12 +267,12 @@ class TestAnalysisPipeline:
             # When rules abstained, SLA is correctly skipped
             assert sla_out.get("skipped") is True
 
-    def test_evidence_and_grievance_outputs_are_stubbed(
+    def test_evidence_and_grievance_outputs_are_present(
         self,
         api_endpoint: str,
         user_a,
     ) -> None:
-        """EvidenceAgent and GrievanceAgent outputs must have stubbed=True in stub mode."""
+        """EvidenceAgent and GrievanceAgent outputs must retain their API shapes."""
         token = user_a.access_token
 
         claim_body = _create_demo_claim(api_endpoint, token)
@@ -285,17 +285,11 @@ class TestAnalysisPipeline:
 
         evidence_out = run.get("evidenceAgentOutputJson", {})
         assert isinstance(evidence_out, dict)
-        assert evidence_out.get("stubbed") is True, (
-            "evidenceReport.stubbed must be True in stub mode"
-        )
         assert "documents" in evidence_out
         assert "summary" in evidence_out
 
         grievance_out = run.get("grievanceAgentOutputJson", {})
         assert isinstance(grievance_out, dict)
-        assert grievance_out.get("stubbed") is True, (
-            "grievanceDraft.stubbed must be True in stub mode"
-        )
         assert "draftText" in grievance_out
 
     def test_tenant_isolation_cannot_start_analysis_on_another_users_claim(

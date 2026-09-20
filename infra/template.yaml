@@ -51,7 +51,32 @@ Parameters:
   GeminiSecretName:
     Type: String
     Default: "epf-sentinel/gemini-api-key"
-    Description: Secrets Manager secret name holding the Gemini API key.
+    Description: >-
+      Secrets Manager secret name holding the Gemini API key. Dev and prod
+      must use different secret names (see Makefile GEMINI_SECRET_NAME).
+
+  DailyAnalysisCap:
+    Type: Number
+    Default: 20
+    Description: Per-user daily analysis cap enforced in StartAnalysis.
+
+Mappings:
+  StageSettings:
+    dev:
+      ThrottleRate: 100
+      ThrottleBurst: 50
+      GeminiDailyCallAlarm: 200
+      GeminiDailyTokenAlarm: 200000
+    staging:
+      ThrottleRate: 50
+      ThrottleBurst: 25
+      GeminiDailyCallAlarm: 150
+      GeminiDailyTokenAlarm: 150000
+    prod:
+      ThrottleRate: 20
+      ThrottleBurst: 10
+      GeminiDailyCallAlarm: 80
+      GeminiDailyTokenAlarm: 80000
 
 Resources:
 
@@ -193,6 +218,29 @@ Resources:
         - AttributeName: claimId
           KeyType: HASH
         - AttributeName: transitionKey
+          KeyType: RANGE
+      TimeToLiveSpecification:
+        AttributeName: expiresAt
+        Enabled: true
+
+  # DynamoDB - per-user daily analysis quota
+  AnalysisQuotaTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: !Sub "epf-sentinel-AnalysisQuota-${Stage}"
+      BillingMode: PAY_PER_REQUEST
+      TableClass: STANDARD
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: dayIso
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+        - AttributeName: dayIso
           KeyType: RANGE
       TimeToLiveSpecification:
         AttributeName: expiresAt
@@ -455,8 +503,8 @@ Resources:
         AllowOrigins: !Ref CorsAllowedOrigins
         MaxAge: 300
       DefaultRouteSettings:
-        ThrottlingBurstLimit: 50
-        ThrottlingRateLimit: 100
+        ThrottlingBurstLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleBurst]
+        ThrottlingRateLimit: !FindInMap [StageSettings, !Ref Stage, ThrottleRate]
       Auth:
         Authorizers:
           CognitoJwtAuthorizer:
@@ -706,6 +754,7 @@ Resources:
             TableName: !Ref AnalysisRunsTable
         - DynamoDBCrudPolicy:
             TableName: !Ref ClaimsTable
+        - CloudWatchPutMetricPolicy: {}
 
   RecordFailureFunction:
     Type: AWS::Serverless::Function
@@ -724,6 +773,7 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref AnalysisRunsTable
+        - CloudWatchPutMetricPolicy: {}
 
   # ─── API Lambdas for analysis pipeline ─────────────────────────────────
 
@@ -744,6 +794,8 @@ Resources:
           ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
           DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
           ANALYSIS_SFN_ARN: !Ref AnalysisSfn
+          ANALYSIS_QUOTA_TABLE_NAME: !Ref AnalysisQuotaTable
+          DAILY_ANALYSIS_CAP: !Ref DailyAnalysisCap
       Events:
         StartAnalysisPost:
           Type: HttpApi
@@ -760,8 +812,11 @@ Resources:
             TableName: !Ref AnalysisRunsTable
         - DynamoDBReadPolicy:
             TableName: !Ref DocumentsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisQuotaTable
         - StepFunctionsExecutionPolicy:
             StateMachineName: !GetAtt AnalysisSfn.Name
+        - CloudWatchPutMetricPolicy: {}
 
   GetRunFunction:
     Type: AWS::Serverless::Function
@@ -1044,6 +1099,222 @@ Resources:
       ComparisonOperator: LessThanThreshold
       TreatMissingData: breaching
 
+  # ─── Module 5.2 — ops alerts, dashboard, hardening ─────────────────────────
+
+  OpsAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: !Sub "epf-sentinel-ops-alerts-${Stage}"
+
+  ObservabilityDashboard:
+    Type: AWS::CloudWatch::Dashboard
+    Properties:
+      DashboardName: !Sub "epf-sentinel-${Stage}"
+      DashboardBody: !Sub
+        - |
+          {
+            "widgets": [
+              {
+                "type": "metric",
+                "x": 0, "y": 0, "width": 12, "height": 6,
+                "properties": {
+                  "title": "Analyses started / completed",
+                  "region": "${AWS::Region}",
+                  "stat": "Sum",
+                  "period": 300,
+                  "metrics": [
+                    ["EPFSentinel", "AnalysisStarted"],
+                    [".", "AnalysisCompleted"]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 12, "y": 0, "width": 12, "height": 6,
+                "properties": {
+                  "title": "Terminal statuses (separate series — abstention ≠ failure)",
+                  "region": "${AWS::Region}",
+                  "stat": "Sum",
+                  "period": 300,
+                  "metrics": [
+                    ["EPFSentinel", "AnalysisStatus", "Status", "COMPLETED"],
+                    ["...", "COMPLETED_WITH_ABSTENTION"],
+                    ["...", "FAILED_INFRASTRUCTURE"],
+                    ["...", "FAILED_VALIDATION"]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 0, "y": 6, "width": 12, "height": 6,
+                "properties": {
+                  "title": "End-to-end analysis latency p50 / p95",
+                  "region": "${AWS::Region}",
+                  "metrics": [
+                    ["EPFSentinel", "AnalysisLatencyMs", {"stat": "p50", "period": 300}],
+                    ["...", {"stat": "p95", "period": 300}]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 12, "y": 6, "width": 12, "height": 6,
+                "properties": {
+                  "title": "Gemini calls, latency, tokens",
+                  "region": "${AWS::Region}",
+                  "metrics": [
+                    ["EPFSentinel", "GeminiCalls", {"stat": "Sum", "period": 300}],
+                    [".", "GeminiLatencyMs", {"stat": "p95", "period": 300, "yAxis": "right"}],
+                    [".", "GeminiTokens", {"stat": "Sum", "period": 300}]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 0, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Rule abstain reasons",
+                  "region": "${AWS::Region}",
+                  "stat": "Sum",
+                  "period": 300,
+                  "metrics": [
+                    ["EPFSentinel", "RuleAbstain", "Reason", "NO_APPLICABLE_RULE"],
+                    ["...", "MODEL_OUTPUT_INVALID"],
+                    ["...", "FABRICATED_CITATION"],
+                    ["...", "UNGROUNDED_QUOTE"],
+                    ["...", "TIMELINE_NOT_IN_SOURCE"]
+                  ]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 8, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Evidence downgrades",
+                  "region": "${AWS::Region}",
+                  "stat": "Sum",
+                  "period": 300,
+                  "metrics": [["EPFSentinel", "EvidenceDowngrade"]]
+                }
+              },
+              {
+                "type": "metric",
+                "x": 16, "y": 12, "width": 8, "height": 6,
+                "properties": {
+                  "title": "Document event DLQ depth",
+                  "region": "${AWS::Region}",
+                  "stat": "Maximum",
+                  "period": 60,
+                  "metrics": [
+                    ["AWS/SQS", "ApproximateNumberOfMessagesVisible", "QueueName", "${DlqName}"]
+                  ]
+                }
+              }
+            ]
+          }
+        - DlqName: !GetAtt DocumentEventDLQ.QueueName
+
+  Api5xxAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-api-5xx-${Stage}"
+      AlarmDescription: HTTP API 5xx rate
+      Namespace: AWS/ApiGateway
+      MetricName: 5xx
+      Dimensions:
+        - Name: ApiId
+          Value: !Ref HttpApi
+        - Name: Stage
+          Value: !Ref Stage
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 5
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  StepFunctionsFailuresAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-sfn-failures-${Stage}"
+      AlarmDescription: Analysis Step Functions failed executions
+      Namespace: AWS/States
+      MetricName: ExecutionsFailed
+      Dimensions:
+        - Name: StateMachineArn
+          Value: !Ref AnalysisSfn
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  DocumentDlqDepthAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-dlq-depth-${Stage}"
+      AlarmDescription: Document event DLQ has messages
+      Namespace: AWS/SQS
+      MetricName: ApproximateNumberOfMessagesVisible
+      Dimensions:
+        - Name: QueueName
+          Value: !GetAtt DocumentEventDLQ.QueueName
+      Statistic: Maximum
+      Period: 60
+      EvaluationPeriods: 1
+      Threshold: 0
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  GeminiErrorsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-gemini-errors-${Stage}"
+      AlarmDescription: Gemini API errors including 429 quota rejections
+      Namespace: EPFSentinel
+      MetricName: GeminiErrors
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 3
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  GeminiDailyCallsAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-gemini-daily-calls-${Stage}"
+      AlarmDescription: Daily Gemini call count cost/quota guard
+      Namespace: EPFSentinel
+      MetricName: GeminiCalls
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: !FindInMap [StageSettings, !Ref Stage, GeminiDailyCallAlarm]
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
+  GeminiDailyTokensAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: !Sub "epf-sentinel-gemini-daily-tokens-${Stage}"
+      AlarmDescription: Daily Gemini token usage cost/quota guard
+      Namespace: EPFSentinel
+      MetricName: GeminiTokens
+      Statistic: Sum
+      Period: 86400
+      EvaluationPeriods: 1
+      Threshold: !FindInMap [StageSettings, !Ref Stage, GeminiDailyTokenAlarm]
+      ComparisonOperator: GreaterThanThreshold
+      TreatMissingData: notBreaching
+      AlarmActions: [!Ref OpsAlertsTopic]
+
 Outputs:
   ApiEndpoint:
     Description: Base URL of the HTTP API
@@ -1134,6 +1405,24 @@ Outputs:
     Value: !Ref DocumentEventDLQ
     Export:
       Name: !Sub "epf-sentinel-DocumentEventDLQUrl-${Stage}"
+
+  AnalysisQuotaTableName:
+    Description: Per-user daily analysis quota table
+    Value: !Ref AnalysisQuotaTable
+    Export:
+      Name: !Sub "epf-sentinel-AnalysisQuotaTable-${Stage}"
+
+  ObservabilityDashboardName:
+    Description: CloudWatch dashboard name
+    Value: !Sub "epf-sentinel-${Stage}"
+    Export:
+      Name: !Sub "epf-sentinel-Dashboard-${Stage}"
+
+  OpsAlertsTopicArn:
+    Description: SNS topic for ops alarms
+    Value: !Ref OpsAlertsTopic
+    Export:
+      Name: !Sub "epf-sentinel-OpsAlertsTopic-${Stage}"
 
   PresignUploadFunctionArn:
     Description: PresignUpload Lambda Function ARN

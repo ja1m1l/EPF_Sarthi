@@ -32,7 +32,9 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
+import time
 from typing import Any, Optional
 
 from shared import gemini
@@ -245,7 +247,8 @@ def handler(event: dict[str, Any], context: object) -> dict[str, Any]:
                 correlationId=correlation_id,
                 reasons=ungrounded_reasons,
             )
-            # Retry ONCE with strict feedback
+            # Retry ONCE with jittered backoff and strict feedback
+            time.sleep(max(0.1, 0.4 + random.uniform(-0.1, 0.2)))
             feedback = "The previous draft was ungrounded: " + "; ".join(ungrounded_reasons)
             draft_text = _generate_draft_with_gemini(redacted_context, feedback_prompt=feedback)
 

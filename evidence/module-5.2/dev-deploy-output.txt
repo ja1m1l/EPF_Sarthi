@@ -1,0 +1,440 @@
+>>> SAM build (stage=dev, sha=aa18ed6)
+sam build \
+		--template infra/template.yaml \
+		
+Building layer 'SharedLayer'
+SharedLayer: Running CustomMakeBuilder:CopySource
+SharedLayer: Running CustomMakeBuilder:MakeBuild
+SharedLayer: Current Artifacts Directory : /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/.aws-sam/build/SharedLayer
+python -c "import os, glob, shutil; out = os.path.join(os.environ['ARTIFACTS_DIR'], 'python', 'shared'); os.makedirs(out, exist_ok=True); [shutil.copy(f, out) for f in glob.glob('*.py')]"
+python -c "import os, subprocess, sys; subprocess.run([sys.executable, '-m', 'pip', 'install', '--platform', 'manylinux2014_x86_64', '--only-binary=:all:', '--implementation', 'cp', '--python-version', '3.12', '-r', 'requirements.txt', '-t', os.path.join(os.environ['ARTIFACTS_DIR'], 'python')])"
+Collecting pydantic<3,>=2.7 (from -r requirements.txt (line 3))
+  Using cached pydantic-2.13.5-py3-none-any.whl.metadata (110 kB)
+Collecting google-genai>=1.0 (from -r requirements.txt (line 4))
+  Using cached google_genai-2.24.0-py3-none-any.whl.metadata (56 kB)
+Collecting pypdf>=4.0 (from -r requirements.txt (line 5))
+  Using cached pypdf-6.19.0-py3-none-any.whl.metadata (7.5 kB)
+Collecting annotated-types>=0.6.0 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.46.5 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+Collecting typing-extensions>=4.14.1 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+Collecting anyio<5.0.0,>=4.8.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+Collecting google-auth<3.0.0,>=2.56.0 (from google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached google_auth-2.58.0-py3-none-any.whl.metadata (6.0 kB)
+Collecting httpx<1.0.0,>=0.28.1 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting requests<3.0.0,>=2.28.1 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting tenacity<9.2.0,>=8.2.3 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached tenacity-9.1.4-py3-none-any.whl.metadata (1.2 kB)
+Collecting websockets<17.0,>=13.0.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached websockets-16.1.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+Collecting distro<2,>=1.7.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting sniffio (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting idna>=2.8 (from anyio<5.0.0,>=4.8.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting cryptography>=38.0.3 (from google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached cryptography-50.0.1-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.3 kB)
+Collecting certifi (from httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting h11>=0.16 (from httpcore==1.*->httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting charset_normalizer<4,>=2 (from requests<3.0.0,>=2.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (45 kB)
+Collecting urllib3<3,>=1.26 (from requests<3.0.0,>=2.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting cffi>=2.0.0 (from cryptography>=38.0.3->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=38.0.3->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pyasn1-0.6.4-py3-none-any.whl.metadata (8.4 kB)
+Using cached pydantic-2.13.5-py3-none-any.whl (472 kB)
+Using cached pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Using cached google_genai-2.24.0-py3-none-any.whl (1.1 MB)
+Using cached anyio-4.15.1-py3-none-any.whl (132 kB)
+Using cached distro-1.9.0-py3-none-any.whl (20 kB)
+Using cached google_auth-2.58.0-py3-none-any.whl (262 kB)
+Using cached httpx-0.28.1-py3-none-any.whl (73 kB)
+Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Using cached idna-3.20-py3-none-any.whl (69 kB)
+Using cached tenacity-9.1.4-py3-none-any.whl (28 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+Using cached websockets-16.1.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (187 kB)
+Using cached pypdf-6.19.0-py3-none-any.whl (395 kB)
+Using cached annotated_types-0.8.0-py3-none-any.whl (13 kB)
+Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+Using cached cryptography-50.0.1-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.7 MB)
+Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Using cached pyasn1-0.6.4-py3-none-any.whl (84 kB)
+Using cached typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Installing collected packages: websockets, urllib3, typing-extensions, tenacity, sniffio, pypdf, pycparser, pyasn1, idna, h11, distro, charset_normalizer, certifi, annotated-types, typing-inspection, requests, pydantic-core, pyasn1-modules, httpcore, cffi, anyio, pydantic, httpx, cryptography, google-auth, google-genai
+
+
+Successfully installed annotated-types-0.8.0 anyio-4.15.1 certifi-2026.7.22 cffi-2.1.1 charset_normalizer-3.5.1 cryptography-50.0.1 distro-1.9.0 google-auth-2.58.0 google-genai-2.24.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.20 pyasn1-0.6.4 pyasn1-modules-0.4.2 pycparser-3.0 pydantic-2.13.5 pydantic-core-2.46.5 pypdf-6.19.0 requests-2.34.2 sniffio-1.3.1 tenacity-9.1.4 typing-extensions-4.16.0 typing-inspection-0.4.4 urllib3-2.8.0 websockets-16.1.1
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/health runtime: python3.12 architecture: x86_64 functions: HealthFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/create_claim runtime: python3.12 architecture: x86_64 functions: CreateClaimFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/list_claims runtime: python3.12 architecture: x86_64 functions: ListClaimsFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_claim runtime: python3.12 architecture: x86_64 functions: GetClaimFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/rules_agent runtime: python3.12 architecture: x86_64 functions: RulesAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/claim_agent runtime: python3.12 architecture: x86_64 functions: ClaimAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/rules_agent_step runtime: python3.12 architecture: x86_64 functions: RulesAgentStepFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/sla_agent runtime: python3.12 architecture: x86_64 functions: SlaAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/evidence_agent runtime: python3.12 architecture: x86_64 functions: EvidenceAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/grievance_agent runtime: python3.12 architecture: x86_64 functions: GrievanceAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/persist_run runtime: python3.12 architecture: x86_64 functions: PersistRunFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/record_failure runtime: python3.12 architecture: x86_64 functions: RecordFailureFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/start_analysis runtime: python3.12 architecture: x86_64 functions: StartAnalysisFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_run runtime: python3.12 architecture: x86_64 functions: GetRunFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/presign_upload runtime: python3.12 architecture: x86_64 functions: PresignUploadFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_document runtime: python3.12 architecture: x86_64 functions: GetDocumentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/extract_document runtime: python3.12 architecture: x86_64 functions: ExtractDocumentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/sweep_function runtime: python3.12 architecture: x86_64 functions: SweepFunction
+requirements.txt file not found. Continuing the build without dependencies.
+ Running PythonPipBuilder:CopySource
+
+Build Succeeded
+
+Built Artifacts  : .aws-sam/build
+Built Template   : .aws-sam/build/template.yaml
+
+Commands you can use next
+=========================
+[*] Validate SAM template: sam validate
+[*] Invoke Function: sam local invoke
+[*] Test Function in the Cloud: sam sync --stack-name {{stack-name}} --watch
+[*] Deploy: sam deploy --guided
+>>> SAM deploy (stage=dev, sha=aa18ed6)
+sam deploy \
+		--no-confirm-changeset \
+		--config-file infra/samconfig.toml \
+		--config-env default \
+		--parameter-overrides \
+			Stage=dev \
+			GitSha=aa18ed6 \
+			AmplifyOrigin=https://placeholder.amplifyapp.com \
+			"CorsAllowedOrigins=https://placeholder.amplifyapp.com,http://localhost:5173" \
+			GeminiSecretName=epf-sentinel/gemini-api-key \
+			DailyAnalysisCap=20
+
+	Managed S3 bucket: aws-sam-cli-managed-default-samclisourcebucket-zktiohsau0vt
+	Auto resolution of buckets can be turned off by setting resolve_s3=False
+	To use a specific S3 bucket, set --s3-bucket=<bucket_name>
+	Above settings can be stored in samconfig.toml
+	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  1048576 / 17625196  (5.95%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  2097152 / 17625196  (11.90%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  3145728 / 17625196  (17.85%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  3993708 / 17625196  (22.66%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  5042284 / 17625196  (28.61%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  6090860 / 17625196  (34.56%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  7139436 / 17625196  (40.51%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  8188012 / 17625196  (46.46%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  9236588 / 17625196  (52.41%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  10285164 / 17625196  (58.35%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  11333740 / 17625196  (64.30%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  12382316 / 17625196  (70.25%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  13430892 / 17625196  (76.20%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  14479468 / 17625196  (82.15%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  15528044 / 17625196  (88.10%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  16576620 / 17625196  (94.05%)	Uploading to epf-sentinel/8b338caf3de976cca60890d9c586b9f0  17625196 / 17625196  (100.00%)
+
+	File with same data already exists at epf-sentinel/5ab7ed3164987e590086da9586df7d36, skipping upload
+
+	File with same data already exists at epf-sentinel/9891d34936021f46669736f959665d66, skipping upload
+
+	File with same data already exists at epf-sentinel/a32a611c83bf389590b6c20deac4e0c7, skipping upload
+
+	File with same data already exists at epf-sentinel/9051ba447042525d3d0152ddc7769826, skipping upload
+
+	File with same data already exists at epf-sentinel/a33d8b725fc0794af3f533d1afeffaed, skipping upload
+
+	File with same data already exists at epf-sentinel/395ce36cfa125b2d22fe579a94f8500b, skipping upload
+
+	File with same data already exists at epf-sentinel/82bdcca219a6f348f2cbc2acca3f311c, skipping upload
+
+	File with same data already exists at epf-sentinel/a4e4f28ffe490a4b853297aaeaff5efa, skipping upload
+
+	File with same data already exists at epf-sentinel/50e6beee94bf144c4003ea9e15e49ca8, skipping upload
+
+	File with same data already exists at epf-sentinel/e1844532ea3123cfa0ee61423bcdd438, skipping upload
+
+	File with same data already exists at epf-sentinel/86749a5140db16acaf31627b8981deca, skipping upload
+
+	File with same data already exists at epf-sentinel/30e8cc15a9aca104739d354ce344fb17, skipping upload
+
+	File with same data already exists at epf-sentinel/70c5c70ced29637100ac680013a964d0, skipping upload
+
+	File with same data already exists at epf-sentinel/d3c67e284d1288a835461671ac35c05b, skipping upload
+
+	File with same data already exists at epf-sentinel/06b99ff6b0c90252a812b8f7832dfcbd, skipping upload
+
+	File with same data already exists at epf-sentinel/239bf05102e41420e73cee597f7d922a, skipping upload
+
+	File with same data already exists at epf-sentinel/30705837f6b220a133cfc864a3d6fad7, skipping upload
+	Uploading to epf-sentinel/1e866887b4d05dead817c9f7be7cbc6b  12015 / 12015  (100.00%)
+
+	File with same data already exists at epf-sentinel/5e88668ce739b01aca99474ac3882901, skipping upload
+
+	Deploying with following values
+	===============================
+	Stack name                   : epf-sentinel-dev
+	Region                       : ap-south-1
+	Confirm changeset            : False
+	Disable rollback             : False
+	Deployment s3 bucket         : aws-sam-cli-managed-default-samclisourcebucket-zktiohsau0vt
+	Capabilities                 : ["CAPABILITY_NAMED_IAM"]
+	Parameter overrides          : {"Stage": "dev", "GitSha": "aa18ed6", "AmplifyOrigin": "https://placeholder.amplifyapp.com", "CorsAllowedOrigins": "https://placeholder.amplifyapp.com,http://localhost:5173", "GeminiSecretName": "epf-sentinel/gemini-api-key", "DailyAnalysisCap": "20"}
+	Signing Profiles             : {}
+
+Initiating deployment
+=====================
+
+	Uploading to epf-sentinel/78dbdce73e44334d0ded82827eadeb9b.template  54279 / 54279  (100.00%)
+
+
+Waiting for changeset to be created..
+
+CloudFormation stack changeset
+-------------------------------------------------------------------------------------------------
+Operation                LogicalResourceId        ResourceType             Replacement            
+-------------------------------------------------------------------------------------------------
++ Add                    SharedLayerdb02430593    AWS::Lambda::LayerVers   N/A                    
+                                                  ion                                             
+* Modify                 AnalysisSfnRole          AWS::IAM::Role           False                  
+* Modify                 AnalysisSfn              AWS::StepFunctions::St   False                  
+                                                  ateMachine                                      
+* Modify                 ClaimAgentFunction       AWS::Lambda::Function    False                  
+* Modify                 CreateClaimFunction      AWS::Lambda::Function    False                  
+* Modify                 EvidenceAgentFunction    AWS::Lambda::Function    False                  
+* Modify                 ExtractDocumentFunctio   AWS::Lambda::Function    False                  
+                         n                                                                        
+* Modify                 GetClaimFunction         AWS::Lambda::Function    False                  
+* Modify                 GetDocumentFunction      AWS::Lambda::Function    False                  
+* Modify                 GetRunFunction           AWS::Lambda::Function    False                  
+* Modify                 GrievanceAgentFunction   AWS::Lambda::Function    False                  
+* Modify                 HealthFunction           AWS::Lambda::Function    False                  
+* Modify                 HttpApi                  AWS::ApiGatewayV2::Api   False                  
+* Modify                 ListClaimsFunction       AWS::Lambda::Function    False                  
+* Modify                 PersistRunFunction       AWS::Lambda::Function    False                  
+* Modify                 PresignUploadFunction    AWS::Lambda::Function    False                  
+* Modify                 RecordFailureFunction    AWS::Lambda::Function    False                  
+* Modify                 RulesAgentFunction       AWS::Lambda::Function    False                  
+* Modify                 RulesAgentStepFunction   AWS::Lambda::Function    False                  
+* Modify                 SlaAgentFunction         AWS::Lambda::Function    False                  
+* Modify                 StartAnalysisFunctionR   AWS::IAM::Role           False                  
+                         ole                                                                      
+* Modify                 StartAnalysisFunction    AWS::Lambda::Function    False                  
+* Modify                 SweepFunctionSweepSche   AWS::Lambda::Permissio   Conditional            
+                         dulePermission           n                                               
+* Modify                 SweepFunctionSweepSche   AWS::Events::Rule        False                  
+                         dule                                                                     
+* Modify                 SweepFunction            AWS::Lambda::Function    False                  
+- Delete                 SharedLayerbad60f4db3    AWS::Lambda::LayerVers   N/A                    
+                                                  ion                                             
+-------------------------------------------------------------------------------------------------
+
+
+Changeset created successfully. arn:aws:cloudformation:ap-south-1:814454905497:changeSet/samcli-deploy1789882884/542b566b-7fc9-4101-9521-2578211a83b0
+
+
+2026-09-20 11:11:46 - Waiting for stack create/update to complete
+
+CloudFormation events from stack operations (refresh every 5.0 seconds)
+-------------------------------------------------------------------------------------------------
+ResourceStatus           ResourceType             LogicalResourceId        ResourceStatusReason   
+-------------------------------------------------------------------------------------------------
+UPDATE_IN_PROGRESS       AWS::CloudFormation::S   epf-sentinel-dev         User Initiated         
+                         tack                                                                     
+CREATE_IN_PROGRESS       AWS::Lambda::LayerVers   SharedLayerdb02430593    -                      
+                         ion                                                                      
+CREATE_IN_PROGRESS       AWS::Lambda::LayerVers   SharedLayerdb02430593    Resource creation      
+                         ion                                               Initiated              
+CREATE_COMPLETE          AWS::Lambda::LayerVers   SharedLayerdb02430593    -                      
+                         ion                                                                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    SlaAgentFunction         -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    CreateClaimFunction      -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    ClaimAgentFunction       -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    GrievanceAgentFunction   -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    HealthFunction           -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    GetClaimFunction         -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    ListClaimsFunction       -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    EvidenceAgentFunction    -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    GetDocumentFunction      -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    GetRunFunction           -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    PersistRunFunction       -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    PresignUploadFunction    -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentFunction       -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    RecordFailureFunction    -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    SweepFunction            -                      
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    ExtractDocumentFunctio   -                      
+                                                  n                                               
+UPDATE_COMPLETE          AWS::Lambda::Function    SlaAgentFunction         -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    GrievanceAgentFunction   -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    ClaimAgentFunction       -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    CreateClaimFunction      -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    HealthFunction           -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    ListClaimsFunction       -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    EvidenceAgentFunction    -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    GetClaimFunction         -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    RulesAgentFunction       -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    GetDocumentFunction      -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    GetRunFunction           -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    PresignUploadFunction    -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    PersistRunFunction       -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    RecordFailureFunction    -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    SweepFunction            -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    ExtractDocumentFunctio   -                      
+                                                  n                                               
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentStepFunction   -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    RulesAgentStepFunction   -                      
+UPDATE_IN_PROGRESS       AWS::StepFunctions::St   AnalysisSfn              -                      
+                         ateMachine                                                               
+UPDATE_COMPLETE          AWS::StepFunctions::St   AnalysisSfn              -                      
+                         ateMachine                                                               
+UPDATE_IN_PROGRESS       AWS::Lambda::Function    StartAnalysisFunction    -                      
+UPDATE_COMPLETE          AWS::Lambda::Function    StartAnalysisFunction    -                      
+UPDATE_COMPLETE_CLEANU   AWS::CloudFormation::S   epf-sentinel-dev         -                      
+P_IN_PROGRESS            tack                                                                     
+DELETE_SKIPPED           AWS::Lambda::LayerVers   SharedLayerbad60f4db3    -                      
+                         ion                                                                      
+UPDATE_COMPLETE          AWS::CloudFormation::S   epf-sentinel-dev         -                      
+                         tack                                                                     
+-------------------------------------------------------------------------------------------------
+
+CloudFormation outputs from deployed stack
+-------------------------------------------------------------------------------------------------
+Outputs                                                                                         
+-------------------------------------------------------------------------------------------------
+Key                 SharedLayerArn                                                              
+Description         ARN of the shared Lambda layer                                              
+Value               arn:aws:lambda:ap-south-1:814454905497:layer:epf-sentinel-shared-dev:18     
+
+Key                 RulesAgentFunctionArn                                                       
+Description         Rules Agent Lambda Function ARN                                             
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-rules-agent-   
+dev                                                                                             
+
+Key                 DocumentEventDLQUrl                                                         
+Description         SQS DLQ URL for failed document events                                      
+Value               https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-  
+dlq-dev                                                                                         
+
+Key                 ClaimsTableName                                                             
+Description         Claims DynamoDB table name                                                  
+Value               epf-sentinel-Claims-dev                                                     
+
+Key                 AnalysisQuotaTableName                                                      
+Description         Per-user daily analysis quota table                                         
+Value               epf-sentinel-AnalysisQuota-dev                                              
+
+Key                 RuleChunksTableName                                                         
+Description         RuleChunks DynamoDB table name                                              
+Value               epf-sentinel-RuleChunks-dev                                                 
+
+Key                 AnalysisSfnArn                                                              
+Description         ARN of the Express Step Functions analysis state machine                    
+Value               arn:aws:states:ap-south-1:814454905497:stateMachine:epf-sentinel-analysis-  
+dev                                                                                             
+
+Key                 DocumentEventQueueUrl                                                       
+Description         SQS Queue URL for document events                                           
+Value               https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-  
+dev                                                                                             
+
+Key                 ApiEndpoint                                                                 
+Description         Base URL of the HTTP API                                                    
+Value               https://a2n6k097vi.execute-api.ap-south-1.amazonaws.com/dev                 
+
+Key                 AnalysisRunsTableName                                                       
+Description         AnalysisRuns DynamoDB table name                                            
+Value               epf-sentinel-AnalysisRuns-dev                                               
+
+Key                 GetRunFunctionArn                                                           
+Description         GetRun Lambda Function ARN                                                  
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-run-dev    
+
+Key                 ExtractDocumentFunctionArn                                                  
+Description         ExtractDocument Lambda Function ARN                                         
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-extract-       
+document-dev                                                                                    
+
+Key                 ObservabilityDashboardName                                                  
+Description         CloudWatch dashboard name                                                   
+Value               epf-sentinel-dev                                                            
+
+Key                 PresignUploadFunctionArn                                                    
+Description         PresignUpload Lambda Function ARN                                           
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-presign-       
+upload-dev                                                                                      
+
+Key                 StartAnalysisFunctionArn                                                    
+Description         StartAnalysis Lambda Function ARN                                           
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-start-         
+analysis-dev                                                                                    
+
+Key                 CognitoUserPoolClientId                                                     
+Description         Cognito User Pool App Client ID                                             
+Value               7d071mqvr6st1e82ej7r0phqmq                                                  
+
+Key                 CognitoUserPoolId                                                           
+Description         Cognito User Pool ID                                                        
+Value               ap-south-1_sAedTtVYr                                                        
+
+Key                 GetDocumentFunctionArn                                                      
+Description         GetDocument Lambda Function ARN                                             
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-document-  
+dev                                                                                             
+
+Key                 DocumentsTableName                                                          
+Description         Documents DynamoDB table name                                               
+Value               epf-sentinel-Documents-dev                                                  
+
+Key                 OpsAlertsTopicArn                                                           
+Description         SNS topic for ops alarms                                                    
+Value               arn:aws:sns:ap-south-1:814454905497:epf-sentinel-ops-alerts-dev             
+
+Key                 DocsBucketName                                                              
+Description         S3 bucket for claim documents                                               
+Value               epf-sentinel-docs-dev-814454905497                                          
+-------------------------------------------------------------------------------------------------
+
+
+Successfully created/updated stack - epf-sentinel-dev in ap-south-1
+

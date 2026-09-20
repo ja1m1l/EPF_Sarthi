@@ -1,0 +1,33 @@
+================================================================================
+EPF SENTINEL — STATUTORY PRECEDENCE & QUOTE RE-ALIGNMENT VERIFICATION
+================================================================================
+
+[STEP 1: RAW MODEL GENERATION (BEFORE POST-VALIDATION)]
+  applicable:         True
+  timelineDays:       7 (Aspirational Charter figure)
+  timelineBasis:      WORKING
+  charterTargetDays:  None
+  quotedSpan:         "Settlement Time as per Citizens' Charter is 7 Working Days." (Charter sentence)
+  citedChunkIds:      ['a613a093a1455973']
+{"ts": "2026-09-20T05:43:01.998562+00:00", "level": "WARNING", "service": "epf-sentinel", "correlationId": "6dc414d0-31a6-4a06-91b4-c525693c4633", "event": "rules_agent.precedence.scheme_over_charter", "modelTimelineDays": 7, "statutoryTimelineDays": 20, "charterTargetDays": 7, "statutoryChunkId": "a613a093a1455973"}
+{"ts": "2026-09-20T05:43:02.012823+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "7d7cbac0-3735-4737-82fb-81829b908651", "event": "Found credentials in shared credentials file: ~/.aws/credentials"}
+{"ts": "2026-09-20T05:43:02.299267+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "bc1eabdf-836a-43bb-8a03-e7b9ec1e6bdd", "event": "rules_agent.metric.emitted", "metric": "StatutoryPrecedenceOverride", "dimensions": []}
+
+[STEP 2: POST-VALIDATION RE-ALIGNMENT & GROUNDING PIPELINE]
+  applicable:         True
+  timelineDays:       20 (Statutory Scheme figure enforced)
+  timelineBasis:      CALENDAR (Operative SLA basis)
+  charterTargetDays:  7 (Preserved in dual-field model)
+  quotedSpan:         "Settlement Time as per Scheme is 20 Days." (Scheme sentence re-aligned)
+  citedChunkIds:      ['a613a093a1455973']
+  abstainReason:      None
+
+[STEP 3: GUARD ASSERTIONS ON NEW STATUTORY VALUES]
+  [PASS] Statutory timeline precedence: 20d CALENDAR (charter target: 7d)
+  [PASS] Verbatim quote re-aligned to statutory Scheme sentence
+  [PASS] Guard 2 (UNGROUNDED_QUOTE): Final statutory quote verified as verbatim substring
+  [PASS] Guard 3 (TIMELINE_NOT_IN_SOURCE): Final statutory timeline (20) verified in chunk
+
+================================================================================
+VERIFICATION COMPLETE: Quote, citations, and timeline are 100% consistent.
+================================================================================

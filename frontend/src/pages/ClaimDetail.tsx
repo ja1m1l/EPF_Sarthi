@@ -131,7 +131,14 @@ export function ClaimDetail() {
       const started = await startAnalysis(claimId);
       setSearchParams({ runId: started.runId });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not start the analysis.');
+      const code = (err as { code?: string }).code;
+      setError(
+        code === 'ANALYSIS_CAP_EXCEEDED'
+          ? 'You have reached today’s analysis limit (20). Open a saved result instead, or try again tomorrow.'
+          : err instanceof Error
+            ? err.message
+            : 'Could not start the analysis.',
+      );
     } finally {
       setRestarting(false);
     }

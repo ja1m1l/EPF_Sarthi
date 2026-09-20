@@ -1,0 +1,63 @@
+Module 5.2 retry-loop audit
+Generated: 2026-09-20
+
+Search scope
+- src/: retry|retries|Retry|backoff|sleep(|bounded while/attempt loops
+- infra/: Retry|MaxAttempts|BackoffRate|IntervalSeconds|maxReceiveCount
+- frontend/src/: retry|setTimeout|bounded while loops
+
+Application retry loops
+1. src/shared/gemini.py:163-195
+   - Bound: MODEL_CONFIG.max_retries=4; 5 total application attempts.
+   - Retryable: transient HTTP 429 and 5xx only.
+   - Daily-quota 429: 0 retries; propagated immediately.
+   - Delay: exponential 1, 2, 4, 8 seconds, capped at 20 seconds,
+     with +/-0.5 second jitter. Transient 429 delay has a >=2.1-second floor.
+
+2. src/shared/rules_agent.py:518-555
+   - Bound: max_json_retries=2; 3 total generation attempts.
+   - Retryable: malformed/non-schema Gemini JSON only.
+   - Delay before retries: exponential 1 and 2 seconds with -0.2/+0.2 jitter,
+     floor 0.1 seconds and cap 4 seconds.
+
+3. src/functions/grievance_agent/app.py:244-257
+   - Bound: exactly 1 retry; 2 total draft attempts.
+   - Retryable: generated draft fails deterministic grounding verification.
+   - Delay: 0.4 seconds with -0.1/+0.2 jitter, floor 0.1 seconds.
+
+Orchestration retries
+4. infra/state_machine.asl.json
+   - ClaimAgent: Retry=[]; validation failures are never retried.
+   - RulesAgent, SlaAgent, EvidenceAgent, GrievanceAgent, PersistRun,
+     RecordFailure: MaxAttempts=2 retries each (3 total attempts).
+   - Delay: IntervalSeconds=2, BackoffRate=2, JitterStrategy=FULL.
+   - Per-state task timeouts: 60, 10, 30, 30, 15, and 15 seconds respectively.
+
+5. infra/template.yaml:267-270, 944-949
+   - ExtractDocument SQS redrive bound: maxReceiveCount=3, BatchSize=1.
+   - After the bounded delivery attempts, the message goes to
+     epf-sentinel-doc-events-dlq-<stage>.
+
+AWS SDK retries
+6. boto3/botocore clients
+   - No repository-defined custom retry loop.
+   - No shared AWS retry_mode or max_attempts is configured on this machine.
+   - Botocore therefore supplies its own bounded default retry policy.
+   - The live DynamoDB test explicitly set AWS_MAX_ATTEMPTS=1 only during
+     fault injection, then restored the function environment.
+
+Bounded polling loops (not dependency retries, included for completeness)
+7. frontend/src/pages/ClaimDetail.tsx:86-118
+   - Analysis polling every 2 seconds for at most 120 seconds (~60 polls).
+
+8. frontend/src/pages/NewClaim.tsx:56-73
+   - Document extraction polling every 2 seconds for at most 90 seconds
+     (~45 polls per document).
+
+Non-retry loops found and excluded
+9. src/functions/sweep_function/app.py:74
+   - DynamoDB pagination/work loop, not a retry loop.
+   - Bound: MAX_CLAIMS_PER_SWEEP=500.
+
+10. src/shared/sla.py:143,166,175
+    - Deterministic date iteration, not retry behavior.

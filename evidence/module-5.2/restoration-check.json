@@ -1,0 +1,22 @@
+{
+  "quotaBillingMode": "PAY_PER_REQUEST",
+  "startAnalysisEnvironmentKeys": [
+    "ANALYSIS_QUOTA_TABLE_NAME",
+    "ANALYSIS_RUNS_TABLE_NAME",
+    "ANALYSIS_SFN_ARN",
+    "CLAIMS_TABLE_NAME",
+    "DAILY_ANALYSIS_CAP",
+    "DOCUMENTS_TABLE_NAME",
+    "LOG_LEVEL",
+    "POWERTOOLS_SERVICE_NAME",
+    "STAGE"
+  ],
+  "rulesAgentEnvironmentKeys": [
+    "GEMINI_SECRET_NAME",
+    "LOG_LEVEL",
+    "POWERTOOLS_SERVICE_NAME",
+    "RULECHUNKS_TABLE_NAME",
+    "STAGE"
+  ],
+  "bucketPolicy": "none"
+}

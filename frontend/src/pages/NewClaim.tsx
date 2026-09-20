@@ -126,7 +126,13 @@ export function NewClaim() {
 
       navigate(`/claims/${claim.claimId}?runId=${run.runId}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong.';
+      const code = (err as { code?: string }).code;
+      const message =
+        code === 'ANALYSIS_CAP_EXCEEDED'
+          ? 'You have reached today’s analysis limit (20). The saved claims are still here — try again tomorrow.'
+          : err instanceof Error
+            ? err.message
+            : 'Something went wrong.';
       const field = (err as { field?: string }).field;
       if (field) setFieldError(field);
       setError(message);

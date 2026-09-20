@@ -38,7 +38,9 @@ from __future__ import annotations
 
 import json
 import os
+import random
 import re
+import time
 from typing import Any, Optional
 
 import boto3
@@ -182,6 +184,61 @@ def contains_discrete_number(text: str, number: int) -> bool:
     return bool(re.search(pattern, text))
 
 
+def _enforce_scheme_over_charter(
+    decision: RuleDecision,
+    retrieved_chunks: list[RuleChunk],
+) -> None:
+    """Enforce the Form-19 Scheme deadline over the Charter target in code."""
+    scheme_pattern = re.compile(
+        r"(Settlement Time as per Scheme is (?P<days>\d+) Days?\.)",
+        re.IGNORECASE,
+    )
+    charter_pattern = re.compile(
+        r"Settlement Time as per Citizens['’] Charter is (?P<days>\d+) Working Days?",
+        re.IGNORECASE,
+    )
+
+    statutory_chunk: Optional[RuleChunk] = None
+    statutory_match: Optional[re.Match[str]] = None
+    charter_days: Optional[int] = None
+
+    for chunk in retrieved_chunks:
+        text = normalize_whitespace(chunk.text)
+        scheme_match = scheme_pattern.search(text)
+        charter_match = charter_pattern.search(text)
+        if scheme_match and "Form-19" in text:
+            statutory_chunk = chunk
+            statutory_match = scheme_match
+        if charter_match and "Form-19" in text:
+            charter_days = int(charter_match.group("days"))
+
+    if not statutory_chunk or not statutory_match or charter_days is None:
+        return
+
+    statutory_days = int(statutory_match.group("days"))
+    if (
+        decision.timelineDays == statutory_days
+        and decision.timelineBasis == "CALENDAR"
+        and decision.charterTargetDays == charter_days
+        and normalize_whitespace(decision.quotedSpan) == statutory_match.group(1)
+    ):
+        return
+
+    log.warning(
+        "rules_agent.precedence.scheme_over_charter",
+        modelTimelineDays=decision.timelineDays,
+        statutoryTimelineDays=statutory_days,
+        charterTargetDays=charter_days,
+        statutoryChunkId=statutory_chunk.chunkId,
+    )
+    emit_metric("StatutoryPrecedenceOverride")
+    decision.timelineDays = statutory_days
+    decision.timelineBasis = "CALENDAR"
+    decision.charterTargetDays = charter_days
+    decision.quotedSpan = statutory_match.group(1)
+    decision.citedChunkIds = [statutory_chunk.chunkId]
+
+
 # ─────────────────────────────────────────────────────────────
 # Post-Validation Logic (Verified Pipeline)
 # ─────────────────────────────────────────────────────────────
@@ -236,6 +293,10 @@ def post_validate(
                 confidence="LOW",
             )
 
+    # The model is not trusted to apply the Scheme-over-Charter hierarchy.
+    # Repair the known Form-19 dual-timeline case before quote/number guards,
+    # then run those guards against the repaired statutory values.
+    _enforce_scheme_over_charter(decision, retrieved_chunks)
     cited_chunks = [retrieved_by_id[cid] for cid in decision.citedChunkIds]
 
     # ── Guard 2: UNGROUNDED_QUOTE ─────────────────────────────
@@ -490,6 +551,8 @@ def select_rule(claim: Claim, rule_set_version: str = "v1") -> RuleDecision:
             if attempt == max_json_retries:
                 emit_abstain_metric("MODEL_OUTPUT_INVALID")
                 return RuleDecision.abstain("MODEL_OUTPUT_INVALID")
+            delay = min(1.0 * (2 ** attempt), 4.0) + random.uniform(-0.2, 0.2)
+            time.sleep(max(0.1, delay))
 
     if not parsed_json:
         emit_abstain_metric("MODEL_OUTPUT_INVALID")

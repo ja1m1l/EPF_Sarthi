@@ -47,8 +47,8 @@ def _create_claim(api_endpoint: str, access_token: str) -> str:
     today_iso = datetime.now(tz=timezone.utc).strftime("%Y-%m-%d")
     payload = {
         "claimType": "FINAL_SETTLEMENT",
-        "claimDateIso": today_iso,
-        "amountPaise": 500000,
+        "claimDate": today_iso,
+        "amountRupees": 5000,
         "status": "SUBMITTED",
     }
     resp = requests.post(
@@ -140,7 +140,7 @@ class TestDocumentIntakeProcessing:
         assert presign_resp.status_code == 200
         presign_data = presign_resp.json()
         doc_id = presign_data["documentId"]
-        s3_url = presign_data["url"]
+        s3_url = presign_data["postUrl"]
         fields = presign_data["fields"]
 
         # 2. Upload corrupt bytes via multipart/form-data POST to S3

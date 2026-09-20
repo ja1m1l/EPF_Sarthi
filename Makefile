@@ -22,6 +22,10 @@
 STAGE           ?= dev
 REGION          ?= ap-south-1
 AMPLIFY_ORIGIN  ?= https://placeholder.amplifyapp.com
+# Dev and prod must use different Secrets Manager names. The key value
+# itself is never passed on the CLI.
+GEMINI_SECRET_NAME ?= $(if $(filter prod,$(STAGE)),epf-sentinel/gemini-api-key-prod,epf-sentinel/gemini-api-key)
+DAILY_ANALYSIS_CAP ?= 20
 
 comma := ,
 
@@ -63,7 +67,9 @@ deploy: build
 			Stage=$(STAGE) \
 			GitSha=$(GIT_SHA) \
 			AmplifyOrigin=$(AMPLIFY_ORIGIN) \
-			"CorsAllowedOrigins=$(CORS_ORIGINS)"
+			"CorsAllowedOrigins=$(CORS_ORIGINS)" \
+			GeminiSecretName=$(GEMINI_SECRET_NAME) \
+			DailyAnalysisCap=$(DAILY_ANALYSIS_CAP)
 
 ## ── test ─────────────────────────────────────────────────────
 test:
