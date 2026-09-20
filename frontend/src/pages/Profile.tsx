@@ -37,11 +37,11 @@ export function Profile() {
       ([payload, attrs]) => {
         if (cancelled) return;
         const address = payload?.email ?? email ?? '';
-        const verifiedRaw = attrs.email_verified ?? payload?.email_verified;
+        const verifiedRaw = String(attrs.email_verified ?? payload?.email_verified ?? '');
         setAccount({
           email: address,
           sub: payload?.sub ?? '',
-          verified: verifiedRaw === true || verifiedRaw === 'true',
+          verified: verifiedRaw.toLowerCase() === 'true',
         });
         const stored = loadProfile(address);
         setDetails({
