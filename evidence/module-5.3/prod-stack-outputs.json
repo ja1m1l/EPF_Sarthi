@@ -1,0 +1,162 @@
+{
+    "StackName": "epf-sentinel-prod",
+    "Status": "CREATE_COMPLETE",
+    "Parameters": [
+        {
+            "ParameterKey": "CorsAllowedOrigins",
+            "ParameterValue": "http://localhost:5173"
+        },
+        {
+            "ParameterKey": "MfaConfiguration",
+            "ParameterValue": "OFF"
+        },
+        {
+            "ParameterKey": "Stage",
+            "ParameterValue": "prod"
+        },
+        {
+            "ParameterKey": "DailyAnalysisCap",
+            "ParameterValue": "20"
+        },
+        {
+            "ParameterKey": "AmplifyOrigin",
+            "ParameterValue": "http://localhost:5173"
+        },
+        {
+            "ParameterKey": "GitSha",
+            "ParameterValue": "14820fe"
+        },
+        {
+            "ParameterKey": "GeminiSecretName",
+            "ParameterValue": "epf-sentinel/gemini-api-key-prod"
+        }
+    ],
+    "Outputs": [
+        {
+            "OutputKey": "SharedLayerArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:layer:epf-sentinel-shared-prod:1",
+            "Description": "ARN of the shared Lambda layer",
+            "ExportName": "epf-sentinel-SharedLayer-prod"
+        },
+        {
+            "OutputKey": "RulesAgentFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-rules-agent-prod",
+            "Description": "Rules Agent Lambda Function ARN",
+            "ExportName": "epf-sentinel-RulesAgentFunctionArn-prod"
+        },
+        {
+            "OutputKey": "DocumentEventDLQUrl",
+            "OutputValue": "https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-dlq-prod",
+            "Description": "SQS DLQ URL for failed document events",
+            "ExportName": "epf-sentinel-DocumentEventDLQUrl-prod"
+        },
+        {
+            "OutputKey": "ClaimsTableName",
+            "OutputValue": "epf-sentinel-Claims-prod",
+            "Description": "Claims DynamoDB table name",
+            "ExportName": "epf-sentinel-ClaimsTable-prod"
+        },
+        {
+            "OutputKey": "AnalysisQuotaTableName",
+            "OutputValue": "epf-sentinel-AnalysisQuota-prod",
+            "Description": "Per-user daily analysis quota table",
+            "ExportName": "epf-sentinel-AnalysisQuotaTable-prod"
+        },
+        {
+            "OutputKey": "RuleChunksTableName",
+            "OutputValue": "epf-sentinel-RuleChunks-prod",
+            "Description": "RuleChunks DynamoDB table name",
+            "ExportName": "epf-sentinel-RuleChunksTable-prod"
+        },
+        {
+            "OutputKey": "AnalysisSfnArn",
+            "OutputValue": "arn:aws:states:ap-south-1:814454905497:stateMachine:epf-sentinel-analysis-prod",
+            "Description": "ARN of the Express Step Functions analysis state machine",
+            "ExportName": "epf-sentinel-AnalysisSfnArn-prod"
+        },
+        {
+            "OutputKey": "DocumentEventQueueUrl",
+            "OutputValue": "https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-prod",
+            "Description": "SQS Queue URL for document events",
+            "ExportName": "epf-sentinel-DocumentEventQueueUrl-prod"
+        },
+        {
+            "OutputKey": "ApiEndpoint",
+            "OutputValue": "https://b8ftyw90r1.execute-api.ap-south-1.amazonaws.com/prod",
+            "Description": "Base URL of the HTTP API",
+            "ExportName": "epf-sentinel-ApiEndpoint-prod"
+        },
+        {
+            "OutputKey": "AnalysisRunsTableName",
+            "OutputValue": "epf-sentinel-AnalysisRuns-prod",
+            "Description": "AnalysisRuns DynamoDB table name",
+            "ExportName": "epf-sentinel-AnalysisRunsTable-prod"
+        },
+        {
+            "OutputKey": "GetRunFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-run-prod",
+            "Description": "GetRun Lambda Function ARN",
+            "ExportName": "epf-sentinel-GetRunFunctionArn-prod"
+        },
+        {
+            "OutputKey": "ExtractDocumentFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-extract-document-prod",
+            "Description": "ExtractDocument Lambda Function ARN",
+            "ExportName": "epf-sentinel-ExtractDocumentFunctionArn-prod"
+        },
+        {
+            "OutputKey": "ObservabilityDashboardName",
+            "OutputValue": "epf-sentinel-prod",
+            "Description": "CloudWatch dashboard name",
+            "ExportName": "epf-sentinel-Dashboard-prod"
+        },
+        {
+            "OutputKey": "PresignUploadFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-presign-upload-prod",
+            "Description": "PresignUpload Lambda Function ARN",
+            "ExportName": "epf-sentinel-PresignUploadFunctionArn-prod"
+        },
+        {
+            "OutputKey": "StartAnalysisFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-start-analysis-prod",
+            "Description": "StartAnalysis Lambda Function ARN",
+            "ExportName": "epf-sentinel-StartAnalysisFunctionArn-prod"
+        },
+        {
+            "OutputKey": "CognitoUserPoolClientId",
+            "OutputValue": "2scmur7i6aqjnhd1jip3nd7ni5",
+            "Description": "Cognito User Pool App Client ID",
+            "ExportName": "epf-sentinel-CognitoUserPoolClientId-prod"
+        },
+        {
+            "OutputKey": "CognitoUserPoolId",
+            "OutputValue": "ap-south-1_oB1QYlvGg",
+            "Description": "Cognito User Pool ID",
+            "ExportName": "epf-sentinel-CognitoUserPoolId-prod"
+        },
+        {
+            "OutputKey": "GetDocumentFunctionArn",
+            "OutputValue": "arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-document-prod",
+            "Description": "GetDocument Lambda Function ARN",
+            "ExportName": "epf-sentinel-GetDocumentFunctionArn-prod"
+        },
+        {
+            "OutputKey": "DocumentsTableName",
+            "OutputValue": "epf-sentinel-Documents-prod",
+            "Description": "Documents DynamoDB table name",
+            "ExportName": "epf-sentinel-DocumentsTable-prod"
+        },
+        {
+            "OutputKey": "OpsAlertsTopicArn",
+            "OutputValue": "arn:aws:sns:ap-south-1:814454905497:epf-sentinel-ops-alerts-prod",
+            "Description": "SNS topic for ops alarms",
+            "ExportName": "epf-sentinel-OpsAlertsTopic-prod"
+        },
+        {
+            "OutputKey": "DocsBucketName",
+            "OutputValue": "epf-sentinel-docs-prod-814454905497",
+            "Description": "S3 bucket for claim documents",
+            "ExportName": "epf-sentinel-DocsBucket-prod"
+        }
+    ]
+}

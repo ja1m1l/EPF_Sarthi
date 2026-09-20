@@ -3,21 +3,25 @@
 @theme {
   --font-sans: "Instrument Serif", ui-serif, Georgia, serif;
   --font-serif: "Instrument Serif", ui-serif, Georgia, serif;
+  --font-hindi: "Tiro Devanagari Hindi", "Instrument Serif", ui-serif, Georgia, serif;
 }
 
 :root {
   color-scheme: light;
 }
 
-body {
+html,
+body,
+#root {
   margin: 0;
-  min-height: 100vh;
-  font-family: var(--font-serif);
-  background: #ffffff;
+  min-height: 100dvh;
+  height: 100%;
 }
 
-#root {
-  min-height: 100vh;
+body {
+  font-family: var(--font-serif);
+  background: #ffffff;
+  overflow-x: hidden;
 }
 
 @keyframes epf-marquee {

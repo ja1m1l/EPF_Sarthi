@@ -1,0 +1,80 @@
+Loaded 38 evaluation cases from rules_eval.jsonl
+Rule set version: v1
+Rate-limit pacing delay: 2.0s per case
+Executing evaluation with live Gemini API...
+
+[01/38] Evaluating NORM-01 (NORMAL)...{"ts": "2026-09-20T06:05:17.379973+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "dab9debd-6c95-41c3-957d-b17acc098a14", "event": "Found credentials in shared credentials file: ~/.aws/credentials"}
+{"ts": "2026-09-20T06:05:17.571632+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "42428538-7407-4ef8-811a-6826fa26059d", "event": "gemini.api_key.loaded", "secretName": "epf-sentinel/gemini-api-key-prod", "region": "ap-south-1"}
+{"ts": "2026-09-20T06:05:17.805955+00:00", "level": "INFO", "service": "epf-sentinel", "correlationId": "64f755ef-174c-4030-bb43-7a30f5336bbf", "event": "HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents \"HTTP/1.1 401 Unauthorized\""}
+{"ts": "2026-09-20T06:05:18.339276+00:00", "level": "ERROR", "service": "epf-sentinel", "correlationId": "d1fc88fc-76e0-492b-b054-54179bad248e", "event": "rules_agent.retrieval.failed", "error": "401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.BatchEmbedContents', 'service': 'generativelanguage.googleapis.com'}}]}}"}
+Traceback (most recent call last):
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/rules_agent.py", line 498, in select_rule
+    query_vector = embed_query(query)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/retrieval.py", line 153, in embed_query
+    vectors = embed([text])
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 237, in embed
+    response = _retry(_call)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 177, in _retry
+    return fn(*args, **kwargs)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/gemini.py", line 231, in _call
+    return client.models.embed_content(
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        model=model,
+        ^^^^^^^^^^^^
+        contents=texts,
+        ^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/models.py", line 6125, in embed_content
+    return self._embed_content(model=model, contents=contents, config=config)
+           ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/models.py", line 4936, in _embed_content
+    response = self._api_client.request(
+        'post', path, request_dict, http_options
+    )
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1750, in request
+    response = self._request(http_request, http_options, stream=False)
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1537, in _request
+    return self._retry(self._request_once, http_request, stream)  # type: ignore[no-any-return]
+           ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 477, in __call__
+    do = self.iter(retry_state=retry_state)
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 378, in iter
+    result = action(retry_state)
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 420, in exc_check
+    raise retry_exc.reraise()
+          ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 187, in reraise
+    raise self.last_attempt.result()
+          ~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 449, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/opt/anaconda3/lib/python3.13/concurrent/futures/_base.py", line 401, in __get_result
+    raise self._exception
+  File "/opt/anaconda3/lib/python3.13/site-packages/tenacity/__init__.py", line 480, in __call__
+    result = fn(*args, **kwargs)
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/_api_client.py", line 1514, in _request_once
+    errors.APIError.raise_for_response(response)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/errors.py", line 173, in raise_for_response
+    cls.raise_error(response.status_code, response_json, response)
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.13/site-packages/google/genai/errors.py", line 202, in raise_error
+    raise ClientError(status_code, response_json, response)
+google.genai.errors.ClientError: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.BatchEmbedContents', 'service': 'generativelanguage.googleapis.com'}}]}}
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 346, in <module>
+    main()
+    ~~~~^^
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 160, in main
+    res = evaluate_case(case, args.rule_set_version)
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/eval/run_rules_eval.py", line 48, in evaluate_case
+    decision: RuleDecision = select_rule(claim, rule_set_version=rule_set_version)
+                             ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/shared/rules_agent.py", line 506, in select_rule
+    raise RulesAgentInfrastructureError(f"Retrieval infrastructure failed: {exc}") from exc
+shared.rules_agent.RulesAgentInfrastructureError: Retrieval infrastructure failed: 401 UNAUTHENTICATED. {'error': {'code': 401, 'message': 'Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.', 'status': 'UNAUTHENTICATED', 'details': [{'@type': 'type.googleapis.com/google.rpc.ErrorInfo', 'reason': 'ACCESS_TOKEN_TYPE_UNSUPPORTED', 'metadata': {'method': 'google.ai.generativelanguage.v1beta.GenerativeService.BatchEmbedContents', 'service': 'generativelanguage.googleapis.com'}}]}}

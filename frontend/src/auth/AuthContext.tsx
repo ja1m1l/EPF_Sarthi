@@ -17,6 +17,8 @@ interface AuthState {
   signUp: (email: string, password: string) => Promise<{ confirmationRequired: boolean }>;
   confirmSignUp: (email: string, code: string) => Promise<void>;
   resendCode: (email: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
+  confirmForgotPassword: (email: string, code: string, newPassword: string) => Promise<void>;
   signOut: () => void;
 }
 
@@ -62,6 +64,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp: handleSignUp,
       confirmSignUp: cognito.confirmSignUp,
       resendCode: cognito.resendConfirmationCode,
+      forgotPassword: cognito.forgotPassword,
+      confirmForgotPassword: cognito.confirmForgotPassword,
       signOut: handleSignOut,
     }),
     [email, loading, handleSignIn, handleSignUp, handleSignOut],

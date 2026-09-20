@@ -11,8 +11,15 @@ function FrameRow() {
   return (
     <div className="flex h-full shrink-0 gap-3 pr-3">
       {FRAMES.map((frame) => (
-        <figure key={frame.src} className="h-full w-[38vw] shrink-0 overflow-hidden sm:w-[22vw] md:w-[18vw]">
-          <img src={frame.src} alt={frame.alt} className="h-full w-full object-cover" />
+        <figure
+          key={frame.src}
+          className="h-full w-[30vw] shrink-0 overflow-hidden rounded-2xl sm:w-[18vw] md:w-[14vw]"
+        >
+          <img
+            src={frame.src}
+            alt={frame.alt}
+            className="h-full w-full object-cover opacity-50 grayscale-20"
+          />
         </figure>
       ))}
     </div>
@@ -21,13 +28,11 @@ function FrameRow() {
 
 export function ImageStrip() {
   return (
-    <div className="relative mt-6 overflow-hidden" aria-hidden="true">
-      <div
-        className="relative h-52 sm:h-64 md:h-80"
-        style={{ clipPath: 'ellipse(92% 100% at 50% 100%)' }}
-      >
-        <div className="absolute inset-y-0 -left-16 -right-16 sm:-left-24 sm:-right-24">
-          <div className="animate-epf-marquee flex h-[120%] pointer-events-none will-change-transform">
+    <div className="relative z-0 mt-auto w-full overflow-hidden pt-4" aria-hidden="true">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-16 bg-linear-to-b from-white to-transparent" />
+      <div className="relative h-36 w-full px-1 sm:h-44 md:h-48">
+        <div className="absolute inset-y-0 left-0 right-0">
+          <div className="animate-epf-marquee pointer-events-none flex h-full will-change-transform">
             <FrameRow />
             <FrameRow />
           </div>

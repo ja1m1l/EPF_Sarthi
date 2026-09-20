@@ -23,7 +23,7 @@ export function GrievancePanel({ draft }: { draft: GrievanceDraft | undefined })
         Draft grievance
       </h2>
       <p className="mt-2 text-sm text-neutral-600">
-        A draft for you to review and submit yourself. EPF Sentinel does not send it anywhere.
+        A draft for you to review and submit yourself. EPF Sarthi does not send it anywhere.
       </p>
 
       <textarea

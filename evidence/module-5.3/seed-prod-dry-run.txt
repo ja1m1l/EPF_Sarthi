@@ -1,0 +1,18 @@
+{
+  "stage": "prod",
+  "stackName": "epf-sentinel-prod",
+  "apiEndpoint": "https://b8ftyw90r1.execute-api.ap-south-1.amazonaws.com/prod",
+  "demoEmail": "demo@epf-sentinel.example",
+  "claim": {
+    "claimType": "FINAL_SETTLEMENT",
+    "claimDate": "2026-08-01",
+    "amountRupees": "480000",
+    "status": "PENDING",
+    "marker": "EPF_SENTINEL_DEMO_V1"
+  },
+  "document": {
+    "kind": "CLAIM_AMOUNT",
+    "contentType": "image/png",
+    "synthetic": true
+  }
+}

@@ -1,0 +1,1026 @@
+>>> SAM build (stage=prod, sha=14820fe)
+sam build \
+		--template infra/template.yaml \
+		
+Building layer 'SharedLayer'
+SharedLayer: Running CustomMakeBuilder:CopySource
+SharedLayer: Running CustomMakeBuilder:MakeBuild
+SharedLayer: Current Artifacts Directory : /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/.aws-sam/build/SharedLayer
+python -c "import os, glob, shutil; out = os.path.join(os.environ['ARTIFACTS_DIR'], 'python', 'shared'); os.makedirs(out, exist_ok=True); [shutil.copy(f, out) for f in glob.glob('*.py')]"
+python -c "import os, subprocess, sys; subprocess.run([sys.executable, '-m', 'pip', 'install', '--platform', 'manylinux2014_x86_64', '--only-binary=:all:', '--implementation', 'cp', '--python-version', '3.12', '-r', 'requirements.txt', '-t', os.path.join(os.environ['ARTIFACTS_DIR'], 'python')])"
+Collecting pydantic<3,>=2.7 (from -r requirements.txt (line 3))
+  Using cached pydantic-2.13.5-py3-none-any.whl.metadata (110 kB)
+Collecting google-genai>=1.0 (from -r requirements.txt (line 4))
+  Using cached google_genai-2.24.0-py3-none-any.whl.metadata (56 kB)
+Collecting pypdf>=4.0 (from -r requirements.txt (line 5))
+  Using cached pypdf-6.19.0-py3-none-any.whl.metadata (7.5 kB)
+Collecting annotated-types>=0.6.0 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached annotated_types-0.8.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.46.5 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (6.6 kB)
+Collecting typing-extensions>=4.14.1 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached typing_extensions-4.16.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic<3,>=2.7->-r requirements.txt (line 3))
+  Using cached typing_inspection-0.4.4-py3-none-any.whl.metadata (2.6 kB)
+Collecting anyio<5.0.0,>=4.8.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached anyio-4.15.1-py3-none-any.whl.metadata (4.7 kB)
+Collecting google-auth<3.0.0,>=2.56.0 (from google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached google_auth-2.58.0-py3-none-any.whl.metadata (6.0 kB)
+Collecting httpx<1.0.0,>=0.28.1 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+Collecting requests<3.0.0,>=2.28.1 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached requests-2.34.2-py3-none-any.whl.metadata (4.8 kB)
+Collecting tenacity<9.2.0,>=8.2.3 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached tenacity-9.1.4-py3-none-any.whl.metadata (1.2 kB)
+Collecting websockets<17.0,>=13.0.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached websockets-16.1.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+Collecting distro<2,>=1.7.0 (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached distro-1.9.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting sniffio (from google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting idna>=2.8 (from anyio<5.0.0,>=4.8.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached idna-3.20-py3-none-any.whl.metadata (7.2 kB)
+Collecting pyasn1-modules>=0.2.1 (from google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting cryptography>=38.0.3 (from google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached cryptography-50.0.1-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (4.3 kB)
+Collecting certifi (from httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached certifi-2026.7.22-py3-none-any.whl.metadata (2.5 kB)
+Collecting httpcore==1.* (from httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached httpcore-1.0.9-py3-none-any.whl.metadata (21 kB)
+Collecting h11>=0.16 (from httpcore==1.*->httpx<1.0.0,>=0.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting charset_normalizer<4,>=2 (from requests<3.0.0,>=2.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (45 kB)
+Collecting urllib3<3,>=1.26 (from requests<3.0.0,>=2.28.1->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached urllib3-2.8.0-py3-none-any.whl.metadata (7.4 kB)
+Collecting cffi>=2.0.0 (from cryptography>=38.0.3->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.5 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=38.0.3->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pycparser-3.0-py3-none-any.whl.metadata (8.2 kB)
+Collecting pyasn1<0.7.0,>=0.6.1 (from pyasn1-modules>=0.2.1->google-auth<3.0.0,>=2.56.0->google-auth[requests]<3.0.0,>=2.56.0->google-genai>=1.0->-r requirements.txt (line 4))
+  Using cached pyasn1-0.6.4-py3-none-any.whl.metadata (8.4 kB)
+Using cached pydantic-2.13.5-py3-none-any.whl (472 kB)
+Using cached pydantic_core-2.46.5-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+Using cached google_genai-2.24.0-py3-none-any.whl (1.1 MB)
+Using cached anyio-4.15.1-py3-none-any.whl (132 kB)
+Using cached distro-1.9.0-py3-none-any.whl (20 kB)
+Using cached google_auth-2.58.0-py3-none-any.whl (262 kB)
+Using cached httpx-0.28.1-py3-none-any.whl (73 kB)
+Using cached httpcore-1.0.9-py3-none-any.whl (78 kB)
+Using cached requests-2.34.2-py3-none-any.whl (73 kB)
+Using cached charset_normalizer-3.5.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Using cached idna-3.20-py3-none-any.whl (69 kB)
+Using cached tenacity-9.1.4-py3-none-any.whl (28 kB)
+Using cached typing_extensions-4.16.0-py3-none-any.whl (45 kB)
+Using cached urllib3-2.8.0-py3-none-any.whl (135 kB)
+Using cached websockets-16.1.1-cp312-cp312-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (187 kB)
+Using cached pypdf-6.19.0-py3-none-any.whl (395 kB)
+Using cached annotated_types-0.8.0-py3-none-any.whl (13 kB)
+Using cached certifi-2026.7.22-py3-none-any.whl (136 kB)
+Using cached cryptography-50.0.1-cp311-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.7 MB)
+Using cached cffi-2.1.1-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (221 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Using cached pyasn1-0.6.4-py3-none-any.whl (84 kB)
+Using cached typing_inspection-0.4.4-py3-none-any.whl (14 kB)
+Using cached pycparser-3.0-py3-none-any.whl (48 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Installing collected packages: websockets, urllib3, typing-extensions, tenacity, sniffio, pypdf, pycparser, pyasn1, idna, h11, distro, charset_normalizer, certifi, annotated-types, typing-inspection, requests, pydantic-core, pyasn1-modules, httpcore, cffi, anyio, pydantic, httpx, cryptography, google-auth, google-genai
+
+
+Successfully installed annotated-types-0.8.0 anyio-4.15.1 certifi-2026.7.22 cffi-2.1.1 charset_normalizer-3.5.1 cryptography-50.0.1 distro-1.9.0 google-auth-2.58.0 google-genai-2.24.0 h11-0.16.0 httpcore-1.0.9 httpx-0.28.1 idna-3.20 pyasn1-0.6.4 pyasn1-modules-0.4.2 pycparser-3.0 pydantic-2.13.5 pydantic-core-2.46.5 pypdf-6.19.0 requests-2.34.2 sniffio-1.3.1 tenacity-9.1.4 typing-extensions-4.16.0 typing-inspection-0.4.4 urllib3-2.8.0 websockets-16.1.1
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/health runtime: python3.12 architecture: x86_64 functions: HealthFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/create_claim runtime: python3.12 architecture: x86_64 functions: CreateClaimFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/list_claims runtime: python3.12 architecture: x86_64 functions: ListClaimsFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_claim runtime: python3.12 architecture: x86_64 functions: GetClaimFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/rules_agent runtime: python3.12 architecture: x86_64 functions: RulesAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/claim_agent runtime: python3.12 architecture: x86_64 functions: ClaimAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/rules_agent_step runtime: python3.12 architecture: x86_64 functions: RulesAgentStepFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/sla_agent runtime: python3.12 architecture: x86_64 functions: SlaAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/evidence_agent runtime: python3.12 architecture: x86_64 functions: EvidenceAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/grievance_agent runtime: python3.12 architecture: x86_64 functions: GrievanceAgentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/persist_run runtime: python3.12 architecture: x86_64 functions: PersistRunFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/record_failure runtime: python3.12 architecture: x86_64 functions: RecordFailureFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/start_analysis runtime: python3.12 architecture: x86_64 functions: StartAnalysisFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_run runtime: python3.12 architecture: x86_64 functions: GetRunFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/presign_upload runtime: python3.12 architecture: x86_64 functions: PresignUploadFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/get_document runtime: python3.12 architecture: x86_64 functions: GetDocumentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/extract_document runtime: python3.12 architecture: x86_64 functions: ExtractDocumentFunction
+ Running PythonPipBuilder:ResolveDependencies
+ Running PythonPipBuilder:CopySource
+Building codeuri: /Users/ja1m1l/Desktop/EPF WatchDog/EPF_WatchDog/src/functions/sweep_function runtime: python3.12 architecture: x86_64 functions: SweepFunction
+requirements.txt file not found. Continuing the build without dependencies.
+ Running PythonPipBuilder:CopySource
+
+Build Succeeded
+
+Built Artifacts  : .aws-sam/build
+Built Template   : .aws-sam/build/template.yaml
+
+Commands you can use next
+=========================
+[*] Validate SAM template: sam validate
+[*] Invoke Function: sam local invoke
+[*] Test Function in the Cloud: sam sync --stack-name {{stack-name}} --watch
+[*] Deploy: sam deploy --guided
+>>> SAM deploy (stage=prod, sha=14820fe)
+sam deploy \
+		--no-confirm-changeset \
+		--config-file infra/samconfig.toml \
+		--config-env prod \
+		--parameter-overrides \
+			Stage=prod \
+			GitSha=14820fe \
+			AmplifyOrigin=http://localhost:5173 \
+			"CorsAllowedOrigins=http://localhost:5173" \
+			GeminiSecretName=epf-sentinel/gemini-api-key-prod \
+			DailyAnalysisCap=20
+
+	Managed S3 bucket: aws-sam-cli-managed-default-samclisourcebucket-zktiohsau0vt
+	Auto resolution of buckets can be turned off by setting resolve_s3=False
+	To use a specific S3 bucket, set --s3-bucket=<bucket_name>
+	Above settings can be stored in samconfig.toml
+	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  848086 / 17625302  (4.81%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  1896662 / 17625302  (10.76%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  2945238 / 17625302  (16.71%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  3993814 / 17625302  (22.66%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  5042390 / 17625302  (28.61%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  6090966 / 17625302  (34.56%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  7139542 / 17625302  (40.51%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  8188118 / 17625302  (46.46%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  9236694 / 17625302  (52.41%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  10285270 / 17625302  (58.36%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  11333846 / 17625302  (64.30%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  12382422 / 17625302  (70.25%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  13430998 / 17625302  (76.20%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  14479574 / 17625302  (82.15%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  15528150 / 17625302  (88.10%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  16576726 / 17625302  (94.05%)	Uploading to epf-sentinel/8e3e3fdc3e01b7cbb65e0b2fb2541a95  17625302 / 17625302  (100.00%)
+
+	File with same data already exists at epf-sentinel/5ab7ed3164987e590086da9586df7d36, skipping upload
+
+	File with same data already exists at epf-sentinel/9891d34936021f46669736f959665d66, skipping upload
+
+	File with same data already exists at epf-sentinel/a32a611c83bf389590b6c20deac4e0c7, skipping upload
+
+	File with same data already exists at epf-sentinel/9051ba447042525d3d0152ddc7769826, skipping upload
+
+	File with same data already exists at epf-sentinel/a33d8b725fc0794af3f533d1afeffaed, skipping upload
+
+	File with same data already exists at epf-sentinel/395ce36cfa125b2d22fe579a94f8500b, skipping upload
+
+	File with same data already exists at epf-sentinel/82bdcca219a6f348f2cbc2acca3f311c, skipping upload
+
+	File with same data already exists at epf-sentinel/a4e4f28ffe490a4b853297aaeaff5efa, skipping upload
+
+	File with same data already exists at epf-sentinel/50e6beee94bf144c4003ea9e15e49ca8, skipping upload
+
+	File with same data already exists at epf-sentinel/e1844532ea3123cfa0ee61423bcdd438, skipping upload
+
+	File with same data already exists at epf-sentinel/86749a5140db16acaf31627b8981deca, skipping upload
+
+	File with same data already exists at epf-sentinel/30e8cc15a9aca104739d354ce344fb17, skipping upload
+
+	File with same data already exists at epf-sentinel/70c5c70ced29637100ac680013a964d0, skipping upload
+
+	File with same data already exists at epf-sentinel/d3c67e284d1288a835461671ac35c05b, skipping upload
+
+	File with same data already exists at epf-sentinel/06b99ff6b0c90252a812b8f7832dfcbd, skipping upload
+
+	File with same data already exists at epf-sentinel/239bf05102e41420e73cee597f7d922a, skipping upload
+
+	File with same data already exists at epf-sentinel/30705837f6b220a133cfc864a3d6fad7, skipping upload
+
+	File with same data already exists at epf-sentinel/1e866887b4d05dead817c9f7be7cbc6b, skipping upload
+
+	File with same data already exists at epf-sentinel/5e88668ce739b01aca99474ac3882901, skipping upload
+
+	Deploying with following values
+	===============================
+	Stack name                   : epf-sentinel-prod
+	Region                       : ap-south-1
+	Confirm changeset            : False
+	Disable rollback             : False
+	Deployment s3 bucket         : aws-sam-cli-managed-default-samclisourcebucket-zktiohsau0vt
+	Capabilities                 : ["CAPABILITY_NAMED_IAM"]
+	Parameter overrides          : {"Stage": "prod", "GitSha": "14820fe", "AmplifyOrigin": "http://localhost:5173", "CorsAllowedOrigins": "http://localhost:5173", "GeminiSecretName": "epf-sentinel/gemini-api-key-prod", "DailyAnalysisCap": "20"}
+	Signing Profiles             : {}
+
+Initiating deployment
+=====================
+
+	Uploading to epf-sentinel/e1844f92be0f45f77f40758328290134.template  54279 / 54279  (100.00%)
+
+
+Waiting for changeset to be created..
+
+CloudFormation stack changeset
+-------------------------------------------------------------------------------------------------
+Operation                LogicalResourceId        ResourceType             Replacement            
+-------------------------------------------------------------------------------------------------
++ Add                    AnalysisQuotaTable       AWS::DynamoDB::Table     N/A                    
++ Add                    AnalysisRunsTable        AWS::DynamoDB::Table     N/A                    
++ Add                    AnalysisSfnLogGroup      AWS::Logs::LogGroup      N/A                    
++ Add                    AnalysisSfnRole          AWS::IAM::Role           N/A                    
++ Add                    AnalysisSfn              AWS::StepFunctions::St   N/A                    
+                                                  ateMachine                                      
++ Add                    Api5xxAlarm              AWS::CloudWatch::Alarm   N/A                    
++ Add                    ClaimAgentFunctionLogG   AWS::Logs::LogGroup      N/A                    
+                         roup                                                                     
++ Add                    ClaimAgentFunctionRole   AWS::IAM::Role           N/A                    
++ Add                    ClaimAgentFunction       AWS::Lambda::Function    N/A                    
++ Add                    ClaimsTable              AWS::DynamoDB::Table     N/A                    
++ Add                    CognitoUserPoolClient    AWS::Cognito::UserPool   N/A                    
+                                                  Client                                          
++ Add                    CognitoUserPool          AWS::Cognito::UserPool   N/A                    
++ Add                    CreateClaimFunctionCre   AWS::Lambda::Permissio   N/A                    
+                         ateClaimPostPermission   n                                               
++ Add                    CreateClaimFunctionLog   AWS::Logs::LogGroup      N/A                    
+                         Group                                                                    
++ Add                    CreateClaimFunctionRol   AWS::IAM::Role           N/A                    
+                         e                                                                        
++ Add                    CreateClaimFunction      AWS::Lambda::Function    N/A                    
++ Add                    DocsBucket               AWS::S3::Bucket          N/A                    
++ Add                    DocumentDlqDepthAlarm    AWS::CloudWatch::Alarm   N/A                    
++ Add                    DocumentEventDLQ         AWS::SQS::Queue          N/A                    
++ Add                    DocumentEventQueuePoli   AWS::SQS::QueuePolicy    N/A                    
+                         cy                                                                       
++ Add                    DocumentEventQueue       AWS::SQS::Queue          N/A                    
++ Add                    DocumentsTable           AWS::DynamoDB::Table     N/A                    
++ Add                    EvidenceAgentFunctionL   AWS::Logs::LogGroup      N/A                    
+                         ogGroup                                                                  
++ Add                    EvidenceAgentFunctionR   AWS::IAM::Role           N/A                    
+                         ole                                                                      
++ Add                    EvidenceAgentFunction    AWS::Lambda::Function    N/A                    
++ Add                    ExtractDocumentFunctio   AWS::Lambda::EventSour   N/A                    
+                         nDocumentQueueEvent      ceMapping                                       
++ Add                    ExtractDocumentFunctio   AWS::Logs::LogGroup      N/A                    
+                         nLogGroup                                                                
++ Add                    ExtractDocumentFunctio   AWS::IAM::Role           N/A                    
+                         nRole                                                                    
++ Add                    ExtractDocumentFunctio   AWS::Lambda::Function    N/A                    
+                         n                                                                        
++ Add                    GeminiDailyCallsAlarm    AWS::CloudWatch::Alarm   N/A                    
++ Add                    GeminiDailyTokensAlarm   AWS::CloudWatch::Alarm   N/A                    
++ Add                    GeminiErrorsAlarm        AWS::CloudWatch::Alarm   N/A                    
++ Add                    GetClaimFunctionGetCla   AWS::Lambda::Permissio   N/A                    
+                         imGetPermission          n                                               
++ Add                    GetClaimFunctionLogGro   AWS::Logs::LogGroup      N/A                    
+                         up                                                                       
++ Add                    GetClaimFunctionRole     AWS::IAM::Role           N/A                    
++ Add                    GetClaimFunction         AWS::Lambda::Function    N/A                    
++ Add                    GetDocumentFunctionGet   AWS::Lambda::Permissio   N/A                    
+                         DocumentGetPermission    n                                               
++ Add                    GetDocumentFunctionLog   AWS::Logs::LogGroup      N/A                    
+                         Group                                                                    
++ Add                    GetDocumentFunctionRol   AWS::IAM::Role           N/A                    
+                         e                                                                        
++ Add                    GetDocumentFunction      AWS::Lambda::Function    N/A                    
++ Add                    GetRunFunctionGetRunGe   AWS::Lambda::Permissio   N/A                    
+                         tPermission              n                                               
++ Add                    GetRunFunctionListRuns   AWS::Lambda::Permissio   N/A                    
+                         GetPermission            n                                               
++ Add                    GetRunFunctionLogGroup   AWS::Logs::LogGroup      N/A                    
++ Add                    GetRunFunctionRole       AWS::IAM::Role           N/A                    
++ Add                    GetRunFunction           AWS::Lambda::Function    N/A                    
++ Add                    GrievanceAgentFunction   AWS::Logs::LogGroup      N/A                    
+                         LogGroup                                                                 
++ Add                    GrievanceAgentFunction   AWS::IAM::Role           N/A                    
+                         Role                                                                     
++ Add                    GrievanceAgentFunction   AWS::Lambda::Function    N/A                    
++ Add                    HealthFunctionHealthGe   AWS::Lambda::Permissio   N/A                    
+                         tPermission              n                                               
++ Add                    HealthFunctionLogGroup   AWS::Logs::LogGroup      N/A                    
++ Add                    HealthFunctionRole       AWS::IAM::Role           N/A                    
++ Add                    HealthFunction           AWS::Lambda::Function    N/A                    
++ Add                    HttpApiStage             AWS::ApiGatewayV2::Sta   N/A                    
+                                                  ge                                              
++ Add                    HttpApi                  AWS::ApiGatewayV2::Api   N/A                    
++ Add                    ListClaimsFunctionList   AWS::Lambda::Permissio   N/A                    
+                         ClaimsGetPermission      n                                               
++ Add                    ListClaimsFunctionLogG   AWS::Logs::LogGroup      N/A                    
+                         roup                                                                     
++ Add                    ListClaimsFunctionRole   AWS::IAM::Role           N/A                    
++ Add                    ListClaimsFunction       AWS::Lambda::Function    N/A                    
++ Add                    ObservabilityDashboard   AWS::CloudWatch::Dashb   N/A                    
+                                                  oard                                            
++ Add                    OpsAlertsTopic           AWS::SNS::Topic          N/A                    
++ Add                    PersistRunFunctionLogG   AWS::Logs::LogGroup      N/A                    
+                         roup                                                                     
++ Add                    PersistRunFunctionRole   AWS::IAM::Role           N/A                    
++ Add                    PersistRunFunction       AWS::Lambda::Function    N/A                    
++ Add                    PresignUploadFunctionL   AWS::Logs::LogGroup      N/A                    
+                         ogGroup                                                                  
++ Add                    PresignUploadFunctionP   AWS::Lambda::Permissio   N/A                    
+                         resignUploadPostPermis   n                                               
+                         sion                                                                     
++ Add                    PresignUploadFunctionR   AWS::IAM::Role           N/A                    
+                         ole                                                                      
++ Add                    PresignUploadFunction    AWS::Lambda::Function    N/A                    
++ Add                    RecordFailureFunctionL   AWS::Logs::LogGroup      N/A                    
+                         ogGroup                                                                  
++ Add                    RecordFailureFunctionR   AWS::IAM::Role           N/A                    
+                         ole                                                                      
++ Add                    RecordFailureFunction    AWS::Lambda::Function    N/A                    
++ Add                    RuleChunksTable          AWS::DynamoDB::Table     N/A                    
++ Add                    RulesAgentFunctionLogG   AWS::Logs::LogGroup      N/A                    
+                         roup                                                                     
++ Add                    RulesAgentFunctionRole   AWS::IAM::Role           N/A                    
++ Add                    RulesAgentFunction       AWS::Lambda::Function    N/A                    
++ Add                    RulesAgentStepFunction   AWS::Logs::LogGroup      N/A                    
+                         LogGroup                                                                 
++ Add                    RulesAgentStepFunction   AWS::IAM::Role           N/A                    
+                         Role                                                                     
++ Add                    RulesAgentStepFunction   AWS::Lambda::Function    N/A                    
++ Add                    SharedLayer23a784bdbf    AWS::Lambda::LayerVers   N/A                    
+                                                  ion                                             
++ Add                    SlaAgentFunctionLogGro   AWS::Logs::LogGroup      N/A                    
+                         up                                                                       
++ Add                    SlaAgentFunctionRole     AWS::IAM::Role           N/A                    
++ Add                    SlaAgentFunction         AWS::Lambda::Function    N/A                    
++ Add                    StartAnalysisFunctionL   AWS::Logs::LogGroup      N/A                    
+                         ogGroup                                                                  
++ Add                    StartAnalysisFunctionR   AWS::IAM::Role           N/A                    
+                         ole                                                                      
++ Add                    StartAnalysisFunctionS   AWS::Lambda::Permissio   N/A                    
+                         tartAnalysisPostPermis   n                                               
+                         sion                                                                     
++ Add                    StartAnalysisFunction    AWS::Lambda::Function    N/A                    
++ Add                    StatusNotificationsTop   AWS::SNS::Topic          N/A                    
+                         ic                                                                       
++ Add                    StatusTransitionsTable   AWS::DynamoDB::Table     N/A                    
++ Add                    StepFunctionsFailuresA   AWS::CloudWatch::Alarm   N/A                    
+                         larm                                                                     
++ Add                    SweepFunctionErrorsAla   AWS::CloudWatch::Alarm   N/A                    
+                         rm                                                                       
++ Add                    SweepFunctionLogGroup    AWS::Logs::LogGroup      N/A                    
++ Add                    SweepFunctionRole        AWS::IAM::Role           N/A                    
++ Add                    SweepFunctionSilentSto   AWS::CloudWatch::Alarm   N/A                    
+                         pAlarm                                                                   
++ Add                    SweepFunctionSweepSche   AWS::Lambda::Permissio   N/A                    
+                         dulePermission           n                                               
++ Add                    SweepFunctionSweepSche   AWS::Events::Rule        N/A                    
+                         dule                                                                     
++ Add                    SweepFunction            AWS::Lambda::Function    N/A                    
+-------------------------------------------------------------------------------------------------
+
+
+Changeset created successfully. arn:aws:cloudformation:ap-south-1:814454905497:changeSet/samcli-deploy1789883950/c623c61d-7180-4e4c-ae8d-62debc6b7712
+
+
+2026-09-20 11:29:26 - Waiting for stack create/update to complete
+
+CloudFormation events from stack operations (refresh every 5.0 seconds)
+-------------------------------------------------------------------------------------------------
+ResourceStatus           ResourceType             LogicalResourceId        ResourceStatusReason   
+-------------------------------------------------------------------------------------------------
+CREATE_IN_PROGRESS       AWS::CloudFormation::S   epf-sentinel-prod        User Initiated         
+                         tack                                                                     
+CREATE_IN_PROGRESS       AWS::Cognito::UserPool   CognitoUserPool          -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      AnalysisSfnLogGroup      -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ExtractDocumentFunctio   -                      
+                                                  nLogGroup                                       
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GrievanceAgentFunction   -                      
+                                                  LogGroup                                        
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     ClaimsTable              -                      
+CREATE_IN_PROGRESS       AWS::SNS::Topic          StatusNotificationsTop   -                      
+                                                  ic                                              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      EvidenceAgentFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetDocumentFunctionLog   -                      
+                                                  Group                                           
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      PresignUploadFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_IN_PROGRESS       AWS::Lambda::LayerVers   SharedLayer23a784bdbf    -                      
+                         ion                                                                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      StartAnalysisFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     DocumentsTable           -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetRunFunctionLogGroup   -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetClaimFunctionLogGro   -                      
+                                                  up                                              
+CREATE_IN_PROGRESS       AWS::IAM::Role           ClaimAgentFunctionRole   -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           GrievanceAgentFunction   -                      
+                                                  Role                                            
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      SlaAgentFunctionLogGro   -                      
+                                                  up                                              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     AnalysisRunsTable        -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           EvidenceAgentFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RulesAgentStepFunction   -                      
+                                                  LogGroup                                        
+CREATE_IN_PROGRESS       AWS::SNS::Topic          OpsAlertsTopic           -                      
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     AnalysisQuotaTable       -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      CreateClaimFunctionLog   -                      
+                                                  Group                                           
+CREATE_IN_PROGRESS       AWS::IAM::Role           SlaAgentFunctionRole     -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ListClaimsFunctionLogG   -                      
+                                                  roup                                            
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      SweepFunctionLogGroup    -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      PersistRunFunctionLogG   -                      
+                                                  roup                                            
+CREATE_IN_PROGRESS       AWS::SQS::Queue          DocumentEventDLQ         -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           HealthFunctionRole       -                      
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     StatusTransitionsTable   -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      HealthFunctionLogGroup   -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RulesAgentFunctionLogG   -                      
+                                                  roup                                            
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     RuleChunksTable          -                      
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ClaimAgentFunctionLogG   -                      
+                                                  roup                                            
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RecordFailureFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetDocumentFunctionLog   Resource creation      
+                                                  Group                    Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      PresignUploadFunctionL   Resource creation      
+                                                  ogGroup                  Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      AnalysisSfnLogGroup      Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      EvidenceAgentFunctionL   Resource creation      
+                                                  ogGroup                  Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      StartAnalysisFunctionL   Resource creation      
+                                                  ogGroup                  Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ExtractDocumentFunctio   Resource creation      
+                                                  nLogGroup                Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      PersistRunFunctionLogG   Resource creation      
+                                                  roup                     Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      CreateClaimFunctionLog   Resource creation      
+                                                  Group                    Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RulesAgentStepFunction   Resource creation      
+                                                  LogGroup                 Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      SlaAgentFunctionLogGro   Resource creation      
+                                                  up                       Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GrievanceAgentFunction   Resource creation      
+                                                  LogGroup                 Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      HealthFunctionLogGroup   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ListClaimsFunctionLogG   Resource creation      
+                                                  roup                     Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      SweepFunctionLogGroup    Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::SQS::Queue          DocumentEventDLQ         Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::SNS::Topic          StatusNotificationsTop   Resource creation      
+                                                  ic                       Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetRunFunctionLogGroup   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RecordFailureFunctionL   Resource creation      
+                                                  ogGroup                  Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      GetClaimFunctionLogGro   Resource creation      
+                                                  up                       Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      RulesAgentFunctionLogG   Resource creation      
+                                                  roup                     Initiated              
+CREATE_IN_PROGRESS       AWS::SNS::Topic          OpsAlertsTopic           Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     ClaimsTable              Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Logs::LogGroup      ClaimAgentFunctionLogG   Resource creation      
+                                                  roup                     Initiated              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     DocumentsTable           Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS -     AWS::SQS::Queue          DocumentEventDLQ         Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_COMPLETE          AWS::SNS::Topic          StatusNotificationsTop   -                      
+                                                  ic                                              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     AnalysisRunsTable        Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           SlaAgentFunctionRole     Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     StatusTransitionsTable   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     RuleChunksTable          Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::SNS::Topic          OpsAlertsTopic           -                      
+CREATE_IN_PROGRESS       AWS::DynamoDB::Table     AnalysisQuotaTable       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           GrievanceAgentFunction   Resource creation      
+                                                  Role                     Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           HealthFunctionRole       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           ClaimAgentFunctionRole   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Dashb   ObservabilityDashboard   -                      
+                         oard                                                                     
+CREATE_IN_PROGRESS       AWS::SQS::Queue          DocumentEventQueue       -                      
+CREATE_IN_PROGRESS       AWS::Cognito::UserPool   CognitoUserPool          Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiErrorsAlarm        -                      
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiDailyTokensAlarm   -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           EvidenceAgentFunctionR   Resource creation      
+                                                  ole                      Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiDailyCallsAlarm    -                      
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   DocumentDlqDepthAlarm    -                      
+CREATE_IN_PROGRESS       AWS::SQS::Queue          DocumentEventQueue       Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::Cognito::UserPool   CognitoUserPool          -                      
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiErrorsAlarm        Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiDailyTokensAlarm   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   GeminiDailyCallsAlarm    Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   DocumentDlqDepthAlarm    Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Dashb   ObservabilityDashboard   Resource creation      
+                         oard                                              Initiated              
+CREATE_IN_PROGRESS -     AWS::SQS::Queue          DocumentEventQueue       Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_IN_PROGRESS       AWS::Cognito::UserPool   CognitoUserPoolClient    -                      
+                         Client                                                                   
+CREATE_IN_PROGRESS       AWS::SQS::QueuePolicy    DocumentEventQueuePoli   -                      
+                                                  cy                                              
+CREATE_IN_PROGRESS       AWS::SQS::QueuePolicy    DocumentEventQueuePoli   Resource creation      
+                                                  cy                       Initiated              
+CREATE_IN_PROGRESS       AWS::Cognito::UserPool   CognitoUserPoolClient    Resource creation      
+                         Client                                            Initiated              
+CREATE_COMPLETE          AWS::Cognito::UserPool   CognitoUserPoolClient    -                      
+                         Client                                                                   
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   GeminiDailyTokensAlarm   -                      
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   GeminiDailyCallsAlarm    -                      
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   DocumentDlqDepthAlarm    -                      
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   GeminiErrorsAlarm        -                      
+CREATE_COMPLETE          AWS::CloudWatch::Dashb   ObservabilityDashboard   -                      
+                         oard                                                                     
+CREATE_IN_PROGRESS       AWS::Lambda::LayerVers   SharedLayer23a784bdbf    Resource creation      
+                         ion                                               Initiated              
+CREATE_COMPLETE          AWS::Lambda::LayerVers   SharedLayer23a784bdbf    -                      
+                         ion                                                                      
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      GetDocumentFunctionLog   Eventual consistency   
+CONFIGURATION_COMPLETE                            Group                    check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      EvidenceAgentFunctionL   Eventual consistency   
+CONFIGURATION_COMPLETE                            ogGroup                  check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      PresignUploadFunctionL   Eventual consistency   
+CONFIGURATION_COMPLETE                            ogGroup                  check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      SlaAgentFunctionLogGro   Eventual consistency   
+CONFIGURATION_COMPLETE                            up                       check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      CreateClaimFunctionLog   Eventual consistency   
+CONFIGURATION_COMPLETE                            Group                    check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      PersistRunFunctionLogG   Eventual consistency   
+CONFIGURATION_COMPLETE                            roup                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      GetRunFunctionLogGroup   Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      ListClaimsFunctionLogG   Eventual consistency   
+CONFIGURATION_COMPLETE                            roup                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      ExtractDocumentFunctio   Eventual consistency   
+CONFIGURATION_COMPLETE                            nLogGroup                check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      AnalysisSfnLogGroup      Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      RulesAgentStepFunction   Eventual consistency   
+CONFIGURATION_COMPLETE                            LogGroup                 check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      GetClaimFunctionLogGro   Eventual consistency   
+CONFIGURATION_COMPLETE                            up                       check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      StartAnalysisFunctionL   Eventual consistency   
+CONFIGURATION_COMPLETE                            ogGroup                  check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      SweepFunctionLogGroup    Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      RecordFailureFunctionL   Eventual consistency   
+CONFIGURATION_COMPLETE                            ogGroup                  check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      GrievanceAgentFunction   Eventual consistency   
+CONFIGURATION_COMPLETE                            LogGroup                 check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      RulesAgentFunctionLogG   Eventual consistency   
+CONFIGURATION_COMPLETE                            roup                     check initiated        
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      HealthFunctionLogGroup   Eventual consistency   
+CONFIGURATION_COMPLETE                                                     check initiated        
+CREATE_COMPLETE          AWS::Logs::LogGroup      PersistRunFunctionLogG   -                      
+                                                  roup                                            
+CREATE_COMPLETE          AWS::Logs::LogGroup      GetDocumentFunctionLog   -                      
+                                                  Group                                           
+CREATE_COMPLETE          AWS::Logs::LogGroup      AnalysisSfnLogGroup      -                      
+CREATE_COMPLETE          AWS::Logs::LogGroup      PresignUploadFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_COMPLETE          AWS::Logs::LogGroup      CreateClaimFunctionLog   -                      
+                                                  Group                                           
+CREATE_COMPLETE          AWS::Logs::LogGroup      RecordFailureFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_COMPLETE          AWS::Logs::LogGroup      RulesAgentFunctionLogG   -                      
+                                                  roup                                            
+CREATE_COMPLETE          AWS::Logs::LogGroup      StartAnalysisFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_COMPLETE          AWS::Logs::LogGroup      SweepFunctionLogGroup    -                      
+CREATE_COMPLETE          AWS::Logs::LogGroup      ListClaimsFunctionLogG   -                      
+                                                  roup                                            
+CREATE_COMPLETE          AWS::Logs::LogGroup      HealthFunctionLogGroup   -                      
+CREATE_COMPLETE          AWS::Logs::LogGroup      RulesAgentStepFunction   -                      
+                                                  LogGroup                                        
+CREATE_COMPLETE          AWS::Logs::LogGroup      GetRunFunctionLogGroup   -                      
+CREATE_COMPLETE          AWS::Logs::LogGroup      GrievanceAgentFunction   -                      
+                                                  LogGroup                                        
+CREATE_COMPLETE          AWS::Logs::LogGroup      ExtractDocumentFunctio   -                      
+                                                  nLogGroup                                       
+CREATE_COMPLETE          AWS::Logs::LogGroup      GetClaimFunctionLogGro   -                      
+                                                  up                                              
+CREATE_IN_PROGRESS -     AWS::Logs::LogGroup      ClaimAgentFunctionLogG   Eventual consistency   
+CONFIGURATION_COMPLETE                            roup                     check initiated        
+CREATE_COMPLETE          AWS::Logs::LogGroup      EvidenceAgentFunctionL   -                      
+                                                  ogGroup                                         
+CREATE_COMPLETE          AWS::DynamoDB::Table     AnalysisRunsTable        -                      
+CREATE_COMPLETE          AWS::DynamoDB::Table     RuleChunksTable          -                      
+CREATE_COMPLETE          AWS::DynamoDB::Table     StatusTransitionsTable   -                      
+CREATE_COMPLETE          AWS::DynamoDB::Table     AnalysisQuotaTable       -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           RecordFailureFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::IAM::Role           RulesAgentFunctionRole   -                      
+CREATE_COMPLETE          AWS::Logs::LogGroup      SlaAgentFunctionLogGro   -                      
+                                                  up                                              
+CREATE_COMPLETE          AWS::Logs::LogGroup      ClaimAgentFunctionLogG   -                      
+                                                  roup                                            
+CREATE_IN_PROGRESS       AWS::IAM::Role           RecordFailureFunctionR   Resource creation      
+                                                  ole                      Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           RulesAgentFunctionRole   Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::IAM::Role           SlaAgentFunctionRole     -                      
+CREATE_COMPLETE          AWS::IAM::Role           HealthFunctionRole       -                      
+CREATE_COMPLETE          AWS::IAM::Role           GrievanceAgentFunction   -                      
+                                                  Role                                            
+CREATE_COMPLETE          AWS::IAM::Role           ClaimAgentFunctionRole   -                      
+CREATE_COMPLETE          AWS::IAM::Role           EvidenceAgentFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::Lambda::Function    SlaAgentFunction         -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    HealthFunction           -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GrievanceAgentFunction   -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ClaimAgentFunction       -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    SlaAgentFunction         Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    HealthFunction           Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GrievanceAgentFunction   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ClaimAgentFunction       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    EvidenceAgentFunction    -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    EvidenceAgentFunction    Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::DynamoDB::Table     ClaimsTable              -                      
+CREATE_COMPLETE          AWS::DynamoDB::Table     DocumentsTable           -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           ListClaimsFunctionRole   -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           CreateClaimFunctionRol   -                      
+                                                  e                                               
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetRunFunctionRole       -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetClaimFunctionRole     -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           PersistRunFunctionRole   -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetDocumentFunctionRol   -                      
+                                                  e                                               
+CREATE_IN_PROGRESS       AWS::IAM::Role           SweepFunctionRole        -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           CreateClaimFunctionRol   Resource creation      
+                                                  e                        Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetClaimFunctionRole     Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetDocumentFunctionRol   Resource creation      
+                                                  e                        Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           GetRunFunctionRole       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           PersistRunFunctionRole   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           ListClaimsFunctionRole   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           SweepFunctionRole        Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::Lambda::Function    SlaAgentFunction         -                      
+CREATE_COMPLETE          AWS::Lambda::Function    HealthFunction           -                      
+CREATE_COMPLETE          AWS::Lambda::Function    GrievanceAgentFunction   -                      
+CREATE_COMPLETE          AWS::Lambda::Function    ClaimAgentFunction       -                      
+CREATE_COMPLETE          AWS::Lambda::Function    EvidenceAgentFunction    -                      
+CREATE_COMPLETE          AWS::IAM::Role           RecordFailureFunctionR   -                      
+                                                  ole                                             
+CREATE_COMPLETE          AWS::IAM::Role           RulesAgentFunctionRole   -                      
+CREATE_COMPLETE          AWS::SQS::QueuePolicy    DocumentEventQueuePoli   -                      
+                                                  cy                                              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RecordFailureFunction    -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentFunction       -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RecordFailureFunction    Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentFunction       Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::IAM::Role           CreateClaimFunctionRol   -                      
+                                                  e                                               
+CREATE_COMPLETE          AWS::IAM::Role           GetClaimFunctionRole     -                      
+CREATE_COMPLETE          AWS::IAM::Role           ListClaimsFunctionRole   -                      
+CREATE_COMPLETE          AWS::IAM::Role           GetDocumentFunctionRol   -                      
+                                                  e                                               
+CREATE_COMPLETE          AWS::IAM::Role           GetRunFunctionRole       -                      
+CREATE_COMPLETE          AWS::IAM::Role           PersistRunFunctionRole   -                      
+CREATE_COMPLETE          AWS::Lambda::Function    RecordFailureFunction    -                      
+CREATE_COMPLETE          AWS::Lambda::Function    RulesAgentFunction       -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    CreateClaimFunction      -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetClaimFunction         -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           RulesAgentStepFunction   -                      
+                                                  Role                                            
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ListClaimsFunction       -                      
+CREATE_COMPLETE          AWS::IAM::Role           SweepFunctionRole        -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetDocumentFunction      -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetRunFunction           -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    CreateClaimFunction      Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetClaimFunction         Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    PersistRunFunction       -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           RulesAgentStepFunction   Resource creation      
+                                                  Role                     Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ListClaimsFunction       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetDocumentFunction      Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    GetRunFunction           Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    PersistRunFunction       Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    SweepFunction            -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    SweepFunction            Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::Lambda::Function    CreateClaimFunction      -                      
+CREATE_COMPLETE          AWS::Lambda::Function    GetClaimFunction         -                      
+CREATE_COMPLETE          AWS::Lambda::Function    ListClaimsFunction       -                      
+CREATE_COMPLETE          AWS::Lambda::Function    GetDocumentFunction      -                      
+CREATE_COMPLETE          AWS::Lambda::Function    GetRunFunction           -                      
+CREATE_COMPLETE          AWS::Lambda::Function    PersistRunFunction       -                      
+CREATE_COMPLETE          AWS::Lambda::Function    SweepFunction            -                      
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   SweepFunctionSilentSto   -                      
+                                                  pAlarm                                          
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   SweepFunctionErrorsAla   -                      
+                                                  rm                                              
+CREATE_IN_PROGRESS       AWS::Events::Rule        SweepFunctionSweepSche   -                      
+                                                  dule                                            
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   SweepFunctionErrorsAla   Resource creation      
+                                                  rm                       Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   SweepFunctionSilentSto   Resource creation      
+                                                  pAlarm                   Initiated              
+CREATE_IN_PROGRESS       AWS::Events::Rule        SweepFunctionSweepSche   Resource creation      
+                                                  dule                     Initiated              
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   SweepFunctionErrorsAla   -                      
+                                                  rm                                              
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   SweepFunctionSilentSto   -                      
+                                                  pAlarm                                          
+CREATE_COMPLETE          AWS::IAM::Role           RulesAgentStepFunction   -                      
+                                                  Role                                            
+CREATE_COMPLETE          AWS::SQS::Queue          DocumentEventDLQ         -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentStepFunction   -                      
+CREATE_COMPLETE          AWS::SQS::Queue          DocumentEventQueue       -                      
+CREATE_IN_PROGRESS       AWS::S3::Bucket          DocsBucket               -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    RulesAgentStepFunction   Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::S3::Bucket          DocsBucket               Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::Lambda::Function    RulesAgentStepFunction   -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           AnalysisSfnRole          -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           AnalysisSfnRole          Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::S3::Bucket          DocsBucket               -                      
+CREATE_IN_PROGRESS       AWS::IAM::Role           PresignUploadFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::IAM::Role           ExtractDocumentFunctio   -                      
+                                                  nRole                                           
+CREATE_IN_PROGRESS       AWS::IAM::Role           PresignUploadFunctionR   Resource creation      
+                                                  ole                      Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           ExtractDocumentFunctio   Resource creation      
+                                                  nRole                    Initiated              
+CREATE_COMPLETE          AWS::IAM::Role           AnalysisSfnRole          -                      
+CREATE_IN_PROGRESS       AWS::StepFunctions::St   AnalysisSfn              -                      
+                         ateMachine                                                               
+CREATE_IN_PROGRESS       AWS::StepFunctions::St   AnalysisSfn              Resource creation      
+                         ateMachine                                        Initiated              
+CREATE_IN_PROGRESS -     AWS::StepFunctions::St   AnalysisSfn              Eventual consistency   
+CONFIGURATION_COMPLETE   ateMachine                                        check initiated        
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   StepFunctionsFailuresA   -                      
+                                                  larm                                            
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   StepFunctionsFailuresA   Resource creation      
+                                                  larm                     Initiated              
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   StepFunctionsFailuresA   -                      
+                                                  larm                                            
+CREATE_COMPLETE          AWS::IAM::Role           PresignUploadFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::Lambda::Function    PresignUploadFunction    -                      
+CREATE_COMPLETE          AWS::IAM::Role           ExtractDocumentFunctio   -                      
+                                                  nRole                                           
+CREATE_IN_PROGRESS       AWS::Lambda::Function    PresignUploadFunction    Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ExtractDocumentFunctio   -                      
+                                                  n                                               
+CREATE_IN_PROGRESS       AWS::Lambda::Function    ExtractDocumentFunctio   Resource creation      
+                                                  n                        Initiated              
+CREATE_IN_PROGRESS -     AWS::Events::Rule        SweepFunctionSweepSche   Eventual consistency   
+CONFIGURATION_COMPLETE                            dule                     check initiated        
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   SweepFunctionSweepSche   -                      
+                         n                        dulePermission                                  
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   SweepFunctionSweepSche   Resource creation      
+                         n                        dulePermission           Initiated              
+CREATE_COMPLETE          AWS::Lambda::Permissio   SweepFunctionSweepSche   -                      
+                         n                        dulePermission                                  
+CREATE_COMPLETE          AWS::Lambda::Function    PresignUploadFunction    -                      
+CREATE_COMPLETE          AWS::StepFunctions::St   AnalysisSfn              -                      
+                         ateMachine                                                               
+CREATE_COMPLETE          AWS::Lambda::Function    ExtractDocumentFunctio   -                      
+                                                  n                                               
+CREATE_IN_PROGRESS       AWS::IAM::Role           StartAnalysisFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::Lambda::EventSour   ExtractDocumentFunctio   -                      
+                         ceMapping                nDocumentQueueEvent                             
+CREATE_IN_PROGRESS       AWS::Lambda::EventSour   ExtractDocumentFunctio   Resource creation      
+                         ceMapping                nDocumentQueueEvent      Initiated              
+CREATE_IN_PROGRESS       AWS::IAM::Role           StartAnalysisFunctionR   Resource creation      
+                                                  ole                      Initiated              
+CREATE_COMPLETE          AWS::Events::Rule        SweepFunctionSweepSche   -                      
+                                                  dule                                            
+CREATE_COMPLETE          AWS::Lambda::EventSour   ExtractDocumentFunctio   -                      
+                         ceMapping                nDocumentQueueEvent                             
+CREATE_COMPLETE          AWS::IAM::Role           StartAnalysisFunctionR   -                      
+                                                  ole                                             
+CREATE_IN_PROGRESS       AWS::Lambda::Function    StartAnalysisFunction    -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Function    StartAnalysisFunction    Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::Lambda::Function    StartAnalysisFunction    -                      
+CREATE_IN_PROGRESS       AWS::ApiGatewayV2::Api   HttpApi                  -                      
+CREATE_IN_PROGRESS       AWS::ApiGatewayV2::Api   HttpApi                  Resource creation      
+                                                                           Initiated              
+CREATE_COMPLETE          AWS::ApiGatewayV2::Api   HttpApi                  -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetClaimFunctionGetCla   -                      
+                         n                        imGetPermission                                 
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetRunFunctionGetRunGe   -                      
+                         n                        tPermission                                     
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   PresignUploadFunctionP   -                      
+                         n                        resignUploadPostPermis                          
+                                                  sion                                            
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   HealthFunctionHealthGe   -                      
+                         n                        tPermission                                     
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetDocumentFunctionGet   -                      
+                         n                        DocumentGetPermission                           
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   CreateClaimFunctionCre   -                      
+                         n                        ateClaimPostPermission                          
+CREATE_IN_PROGRESS       AWS::ApiGatewayV2::Sta   HttpApiStage             -                      
+                         ge                                                                       
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   StartAnalysisFunctionS   -                      
+                         n                        tartAnalysisPostPermis                          
+                                                  sion                                            
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   Api5xxAlarm              -                      
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   ListClaimsFunctionList   -                      
+                         n                        ClaimsGetPermission                             
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetRunFunctionListRuns   -                      
+                         n                        GetPermission                                   
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetDocumentFunctionGet   Resource creation      
+                         n                        DocumentGetPermission    Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   PresignUploadFunctionP   Resource creation      
+                         n                        resignUploadPostPermis   Initiated              
+                                                  sion                                            
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   HealthFunctionHealthGe   Resource creation      
+                         n                        tPermission              Initiated              
+CREATE_IN_PROGRESS       AWS::CloudWatch::Alarm   Api5xxAlarm              Resource creation      
+                                                                           Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetRunFunctionGetRunGe   Resource creation      
+                         n                        tPermission              Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   StartAnalysisFunctionS   Resource creation      
+                         n                        tartAnalysisPostPermis   Initiated              
+                                                  sion                                            
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   CreateClaimFunctionCre   Resource creation      
+                         n                        ateClaimPostPermission   Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   ListClaimsFunctionList   Resource creation      
+                         n                        ClaimsGetPermission      Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetClaimFunctionGetCla   Resource creation      
+                         n                        imGetPermission          Initiated              
+CREATE_IN_PROGRESS       AWS::Lambda::Permissio   GetRunFunctionListRuns   Resource creation      
+                         n                        GetPermission            Initiated              
+CREATE_IN_PROGRESS       AWS::ApiGatewayV2::Sta   HttpApiStage             Resource creation      
+                         ge                                                Initiated              
+CREATE_COMPLETE          AWS::Lambda::Permissio   GetDocumentFunctionGet   -                      
+                         n                        DocumentGetPermission                           
+CREATE_COMPLETE          AWS::Lambda::Permissio   PresignUploadFunctionP   -                      
+                         n                        resignUploadPostPermis                          
+                                                  sion                                            
+CREATE_COMPLETE          AWS::Lambda::Permissio   HealthFunctionHealthGe   -                      
+                         n                        tPermission                                     
+CREATE_COMPLETE          AWS::Lambda::Permissio   GetRunFunctionGetRunGe   -                      
+                         n                        tPermission                                     
+CREATE_COMPLETE          AWS::Lambda::Permissio   ListClaimsFunctionList   -                      
+                         n                        ClaimsGetPermission                             
+CREATE_COMPLETE          AWS::Lambda::Permissio   CreateClaimFunctionCre   -                      
+                         n                        ateClaimPostPermission                          
+CREATE_COMPLETE          AWS::Lambda::Permissio   GetClaimFunctionGetCla   -                      
+                         n                        imGetPermission                                 
+CREATE_COMPLETE          AWS::Lambda::Permissio   StartAnalysisFunctionS   -                      
+                         n                        tartAnalysisPostPermis                          
+                                                  sion                                            
+CREATE_COMPLETE          AWS::Lambda::Permissio   GetRunFunctionListRuns   -                      
+                         n                        GetPermission                                   
+CREATE_COMPLETE          AWS::ApiGatewayV2::Sta   HttpApiStage             -                      
+                         ge                                                                       
+CREATE_COMPLETE          AWS::CloudWatch::Alarm   Api5xxAlarm              -                      
+CREATE_COMPLETE          AWS::CloudFormation::S   epf-sentinel-prod        -                      
+                         tack                                                                     
+-------------------------------------------------------------------------------------------------
+
+CloudFormation outputs from deployed stack
+-------------------------------------------------------------------------------------------------
+Outputs                                                                                         
+-------------------------------------------------------------------------------------------------
+Key                 SharedLayerArn                                                              
+Description         ARN of the shared Lambda layer                                              
+Value               arn:aws:lambda:ap-south-1:814454905497:layer:epf-sentinel-shared-prod:1     
+
+Key                 RulesAgentFunctionArn                                                       
+Description         Rules Agent Lambda Function ARN                                             
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-rules-agent-   
+prod                                                                                            
+
+Key                 DocumentEventDLQUrl                                                         
+Description         SQS DLQ URL for failed document events                                      
+Value               https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-  
+dlq-prod                                                                                        
+
+Key                 ClaimsTableName                                                             
+Description         Claims DynamoDB table name                                                  
+Value               epf-sentinel-Claims-prod                                                    
+
+Key                 AnalysisQuotaTableName                                                      
+Description         Per-user daily analysis quota table                                         
+Value               epf-sentinel-AnalysisQuota-prod                                             
+
+Key                 RuleChunksTableName                                                         
+Description         RuleChunks DynamoDB table name                                              
+Value               epf-sentinel-RuleChunks-prod                                                
+
+Key                 AnalysisSfnArn                                                              
+Description         ARN of the Express Step Functions analysis state machine                    
+Value               arn:aws:states:ap-south-1:814454905497:stateMachine:epf-sentinel-analysis-  
+prod                                                                                            
+
+Key                 DocumentEventQueueUrl                                                       
+Description         SQS Queue URL for document events                                           
+Value               https://sqs.ap-south-1.amazonaws.com/814454905497/epf-sentinel-doc-events-  
+prod                                                                                            
+
+Key                 ApiEndpoint                                                                 
+Description         Base URL of the HTTP API                                                    
+Value               https://b8ftyw90r1.execute-api.ap-south-1.amazonaws.com/prod                
+
+Key                 AnalysisRunsTableName                                                       
+Description         AnalysisRuns DynamoDB table name                                            
+Value               epf-sentinel-AnalysisRuns-prod                                              
+
+Key                 GetRunFunctionArn                                                           
+Description         GetRun Lambda Function ARN                                                  
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-run-prod   
+
+Key                 ExtractDocumentFunctionArn                                                  
+Description         ExtractDocument Lambda Function ARN                                         
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-extract-       
+document-prod                                                                                   
+
+Key                 ObservabilityDashboardName                                                  
+Description         CloudWatch dashboard name                                                   
+Value               epf-sentinel-prod                                                           
+
+Key                 PresignUploadFunctionArn                                                    
+Description         PresignUpload Lambda Function ARN                                           
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-presign-       
+upload-prod                                                                                     
+
+Key                 StartAnalysisFunctionArn                                                    
+Description         StartAnalysis Lambda Function ARN                                           
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-start-         
+analysis-prod                                                                                   
+
+Key                 CognitoUserPoolClientId                                                     
+Description         Cognito User Pool App Client ID                                             
+Value               2scmur7i6aqjnhd1jip3nd7ni5                                                  
+
+Key                 CognitoUserPoolId                                                           
+Description         Cognito User Pool ID                                                        
+Value               ap-south-1_oB1QYlvGg                                                        
+
+Key                 GetDocumentFunctionArn                                                      
+Description         GetDocument Lambda Function ARN                                             
+Value               arn:aws:lambda:ap-south-1:814454905497:function:epf-sentinel-get-document-  
+prod                                                                                            
+
+Key                 DocumentsTableName                                                          
+Description         Documents DynamoDB table name                                               
+Value               epf-sentinel-Documents-prod                                                 
+
+Key                 OpsAlertsTopicArn                                                           
+Description         SNS topic for ops alarms                                                    
+Value               arn:aws:sns:ap-south-1:814454905497:epf-sentinel-ops-alerts-prod            
+
+Key                 DocsBucketName                                                              
+Description         S3 bucket for claim documents                                               
+Value               epf-sentinel-docs-prod-814454905497                                         
+-------------------------------------------------------------------------------------------------
+
+
+Successfully created/updated stack - epf-sentinel-prod in ap-south-1
+

@@ -5,10 +5,11 @@ import { useAuth } from '@/auth/AuthContext';
 import { insetField } from '@/components/ui';
 import { cn } from '@/lib/utils';
 
-type Mode = 'signin' | 'signup' | 'confirm';
+type Mode = 'signin' | 'signup' | 'confirm' | 'forgot' | 'reset';
 
 export function SignIn() {
-  const { signIn, signUp, confirmSignUp, resendCode } = useAuth();
+  const { signIn, signUp, confirmSignUp, resendCode, forgotPassword, confirmForgotPassword } =
+    useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -22,7 +23,9 @@ export function SignIn() {
 
   useEffect(() => {
     const next = searchParams.get('mode') === 'signup' ? 'signup' : 'signin';
-    setMode((current) => (current === 'confirm' ? current : next));
+    setMode((current) =>
+      current === 'confirm' || current === 'forgot' || current === 'reset' ? current : next,
+    );
   }, [searchParams]);
 
   async function handleSubmit(event: FormEvent) {
@@ -44,6 +47,14 @@ export function SignIn() {
           await signIn(email, password);
           navigate('/claims');
         }
+      } else if (mode === 'forgot') {
+        await forgotPassword(email);
+        setMode('reset');
+        setNotice('If an account exists for that email, we sent a reset code.');
+      } else if (mode === 'reset') {
+        await confirmForgotPassword(email, code, password);
+        await signIn(email, password);
+        navigate('/claims');
       } else {
         await confirmSignUp(email, code);
         await signIn(email, password);
@@ -57,33 +68,42 @@ export function SignIn() {
   }
 
   const title =
-    mode === 'signin' ? 'Sign in' : mode === 'signup' ? 'Create an account' : 'Confirm your email';
+    mode === 'signin'
+      ? 'Sign in'
+      : mode === 'signup'
+        ? 'Create an account'
+        : mode === 'confirm'
+          ? 'Confirm your email'
+          : mode === 'forgot'
+            ? 'Reset password'
+            : 'Enter the reset code';
 
   return (
-    <div className="px-6">
-      <section className="relative mx-auto flex max-w-4xl flex-col items-center justify-center pt-10 pb-8 text-center">
+    <div className="flex w-full flex-1 flex-col items-center px-5 sm:px-7">
+      <section className="relative mx-auto flex w-full max-w-3xl flex-col items-center pt-8 pb-8 text-center sm:pt-10">
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 h-64 w-136 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(214,232,122,0.55),rgba(255,196,140,0.28)_42%,transparent_70%)] blur-2xl"
+          className="pointer-events-none absolute top-[42%] left-1/2 h-48 w-[28rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_center,rgba(250,236,180,0.55),rgba(255,214,170,0.18)_48%,transparent_72%)] blur-3xl"
         />
 
-        <h1 className="relative text-5xl leading-[1.05] tracking-[-0.03em] text-neutral-950 sm:text-6xl md:text-7xl">
+        <h1 className="relative text-[2.75rem] leading-[1.08] tracking-[-0.04em] text-neutral-950 sm:text-6xl md:text-7xl">
           Know when the
           <br />
           timeline has passed
         </h1>
-        <p className="relative mt-8 text-sm text-neutral-500">Welcome to EPF Sentinel</p>
       </section>
 
       <form
         id="auth"
         onSubmit={handleSubmit}
-        className="mx-auto mt-2 w-full max-w-md space-y-3 rounded-3xl border border-neutral-200 bg-white p-5"
+        className="relative z-10 mx-auto mb-6 w-full max-w-md space-y-4 rounded-[1.75rem] border border-white/80 bg-white/65 p-6 shadow-[0_18px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur-2xl"
       >
-        <h2 className="text-2xl tracking-[-0.02em]">{title}</h2>
-        <p className="text-sm text-neutral-500">
-          Track whether your EPF final settlement claim has passed its published timeline.
-        </p>
+        <div>
+          <h2 className="text-2xl tracking-[-0.03em]">{title}</h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-neutral-500">
+            Check your PF final settlement against published EPFO timelines.
+          </p>
+        </div>
 
         <Field label="Email">
           <input
@@ -92,24 +112,29 @@ export function SignIn() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={mode === 'confirm'}
+            disabled={mode === 'confirm' || mode === 'reset'}
             className={cn(insetField, 'rounded-full px-4')}
           />
         </Field>
 
-        <Field label="Password" hint={mode === 'signup' ? 'At least 8 characters.' : undefined}>
-          <input
-            type="password"
-            required
-            autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className={cn(insetField, 'rounded-full px-4')}
-          />
-        </Field>
+        {mode !== 'forgot' && (
+          <Field
+            label={mode === 'reset' ? 'New password' : 'Password'}
+            hint={mode === 'signup' || mode === 'reset' ? 'At least 8 characters, with upper, lower, and a number.' : undefined}
+          >
+            <input
+              type="password"
+              required
+              autoComplete={mode === 'signin' ? 'current-password' : 'new-password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className={cn(insetField, 'rounded-full px-4')}
+            />
+          </Field>
+        )}
 
-        {mode === 'confirm' && (
-          <Field label="Confirmation code">
+        {(mode === 'confirm' || mode === 'reset') && (
+          <Field label={mode === 'reset' ? 'Reset code' : 'Confirmation code'}>
             <input
               type="text"
               required
@@ -139,18 +164,27 @@ export function SignIn() {
               ? 'Sign in'
               : mode === 'signup'
                 ? 'Sign up'
-                : 'Confirm'}
+                : mode === 'forgot'
+                  ? 'Send reset code'
+                  : mode === 'reset'
+                    ? 'Set new password'
+                    : 'Confirm'}
         </button>
 
-        <div className="text-center text-sm text-neutral-500">
+        <div className="space-y-2 text-center text-sm text-neutral-500">
           {mode === 'signin' && (
-            <button type="button" onClick={() => setMode('signup')} className="underline">
-              Need an account? Sign up
-            </button>
+            <>
+              <button type="button" onClick={() => setMode('forgot')} className="block w-full underline">
+                Forgot password?
+              </button>
+              <button type="button" onClick={() => setMode('signup')} className="underline">
+                Need an account? Sign up
+              </button>
+            </>
           )}
-          {mode === 'signup' && (
+          {(mode === 'signup' || mode === 'forgot' || mode === 'reset') && (
             <button type="button" onClick={() => setMode('signin')} className="underline">
-              Already have an account? Sign in
+              Back to sign in
             </button>
           )}
           {mode === 'confirm' && (

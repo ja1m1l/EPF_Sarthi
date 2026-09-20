@@ -9,9 +9,9 @@ export const surface = cn(
 
 export const insetField = cn(
   'w-full rounded-md px-3 py-2 text-sm text-neutral-800',
-  'bg-linear-to-b from-neutral-50 to-white',
-  'shadow-[inset_0_0_0_1px_#e5e5e5,inset_0_2px_0_0_#ffffff]',
-  'outline-none placeholder:text-neutral-400',
+  'bg-white/50',
+  'shadow-[inset_0_0_0_1px_rgba(229,229,229,0.7),inset_0_2px_0_0_rgba(255,255,255,0.7)]',
+  'outline-none placeholder:text-neutral-400 backdrop-blur-sm',
   'focus:shadow-[inset_0_0_0_1px_#0f172a,inset_0_2px_0_0_#ffffff]',
   'disabled:opacity-60',
 );

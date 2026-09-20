@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: EPF Sentinel - EPFO claim SLA tracker (Module 2.4 - Step Functions analysis pipeline with stubbed agents)
+Description: EPF Sarthi - EPFO claim SLA tracker (Module 2.4 - Step Functions analysis pipeline with stubbed agents)
 
 Globals:
   Function:
@@ -394,6 +394,12 @@ Resources:
       LogGroupName: !Sub "/aws/lambda/epf-sentinel-list-claims-${Stage}"
       RetentionInDays: 14
 
+  DeleteAccountFunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/epf-sentinel-delete-account-${Stage}"
+      RetentionInDays: 14
+
   GetClaimFunctionLogGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -496,7 +502,7 @@ Resources:
     Type: AWS::Serverless::HttpApi
     Properties:
       StageName: !Ref Stage
-      Description: EPF Sentinel HTTP API
+      Description: EPF Sarthi HTTP API
       CorsConfiguration:
         AllowHeaders: ["Content-Type", "Authorization", "X-Correlation-Id"]
         AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
@@ -593,6 +599,48 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref ClaimsTable
+
+  DeleteAccountFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "epf-sentinel-delete-account-${Stage}"
+      CodeUri: ../src/functions/delete_account/
+      Handler: app.handler
+      Timeout: 60
+      Description: DELETE /account — erase the caller's stored claims, documents, and uploads
+      LoggingConfig:
+        LogGroup: !Ref DeleteAccountFunctionLogGroup
+      Environment:
+        Variables:
+          CLAIMS_TABLE_NAME: !Ref ClaimsTable
+          DOCUMENTS_TABLE_NAME: !Ref DocumentsTable
+          ANALYSIS_RUNS_TABLE_NAME: !Ref AnalysisRunsTable
+          STATUS_TRANSITIONS_TABLE_NAME: !Ref StatusTransitionsTable
+          QUOTA_TABLE_NAME: !Ref AnalysisQuotaTable
+          DOCS_BUCKET_NAME: !Ref DocsBucket
+          STAGE: !Ref Stage
+      Events:
+        DeleteAccountDelete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Path: /account
+            Method: DELETE
+            Auth:
+              Authorizer: CognitoJwtAuthorizer
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref ClaimsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref DocumentsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisRunsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref StatusTransitionsTable
+        - DynamoDBCrudPolicy:
+            TableName: !Ref AnalysisQuotaTable
+        - S3CrudPolicy:
+            BucketName: !Ref DocsBucket
 
   GetClaimFunction:
     Type: AWS::Serverless::Function

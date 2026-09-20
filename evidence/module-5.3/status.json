@@ -1,0 +1,48 @@
+{
+  "capturedAt": "2026-09-20T06:05:18Z",
+  "prodStack": {
+    "name": "epf-sentinel-prod",
+    "status": "CREATE_COMPLETE",
+    "apiEndpoint": "https://b8ftyw90r1.execute-api.ap-south-1.amazonaws.com/prod",
+    "health": "ok",
+    "gitSha": "14820fe"
+  },
+  "prodSecret": {
+    "name": "epf-sentinel/gemini-api-key-prod",
+    "hasCurrentVersion": true,
+    "valueRead": false,
+    "liveValidation": "FAILED",
+    "failure": "401 UNAUTHENTICATED: ACCESS_TOKEN_TYPE_UNSUPPORTED",
+    "requiredAction": "Revoke the exposed credential and install a fresh Google Gemini API key without pasting it into chat."
+  },
+  "verification": {
+    "unit": {
+      "passed": 270,
+      "failed": 0
+    },
+    "integrationProd": {
+      "passed": 18,
+      "failed": 5,
+      "rootCause": "Invalid prod Gemini credential"
+    },
+    "frontendLint": {
+      "exitCode": 0,
+      "warnings": 4
+    },
+    "frontendBuild": {
+      "exitCode": 0
+    },
+    "rulesEvalProd": {
+      "casesLoaded": 38,
+      "casesCompleted": 0,
+      "blockedCase": "NORM-01",
+      "rootCause": "Invalid prod Gemini credential"
+    }
+  },
+  "notProduced": [
+    "seed-prod.json",
+    "screenshot-index.json",
+    "latencies.json",
+    "final-grievance-draft.txt"
+  ]
+}

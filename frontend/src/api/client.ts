@@ -1,5 +1,5 @@
 /**
- * Thin fetch wrapper over the EPF Sentinel HTTP API.
+ * Thin fetch wrapper over the EPF Sarthi HTTP API.
  *
  * Every call attaches the Cognito ID token. The backend derives userId from
  * the token's `sub` claim alone, so no request here ever sends a userId.
@@ -84,6 +84,10 @@ export function getRun(claimId: string, runId: string): Promise<AnalysisRun> {
 
 export function listRuns(claimId: string): Promise<{ runs: AnalysisRun[] }> {
   return request<{ runs: AnalysisRun[] }>(`/claims/${claimId}/runs`);
+}
+
+export function deleteAccount(): Promise<{ deleted: boolean }> {
+  return request<{ deleted: boolean }>('/account', { method: 'DELETE' });
 }
 
 export function getDocument(

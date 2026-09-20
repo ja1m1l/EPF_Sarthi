@@ -5,8 +5,10 @@ import { IoChevronDown } from 'react-icons/io5';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 import { useAuth } from '@/auth/AuthContext';
+import { loadProfile } from '@/auth/profile';
 import { BrandMark } from '@/components/BrandMark';
 import { ImageStrip } from '@/components/ImageStrip';
+import { WordBackdrop } from '@/components/WordBackdrop';
 import { config } from '@/config';
 import { cn } from '@/lib/utils';
 
@@ -26,13 +28,21 @@ export function Layout({ children }: { children: ReactNode }) {
     { key: 'new', label: 'New claim', onClick: () => navigate('/claims/new') },
   ];
 
+  const profile = email ? loadProfile(email) : null;
+  const initials =
+    [profile?.givenName, profile?.familyName]
+      .map((part) => part?.trim().charAt(0))
+      .join('')
+      .toUpperCase() || email?.charAt(0).toUpperCase() || 'U';
+
   return (
-    <div className="relative flex min-h-screen flex-col bg-white text-neutral-950">
-      <header className="relative z-20">
-        <div className="relative mx-auto flex max-w-6xl items-center justify-between px-5 py-5">
-          <Link to={email ? '/claims' : '/signin'} className="relative z-10 flex items-center gap-2.5">
-            <BrandMark className="h-10 w-10 text-neutral-950" />
-            <span className="text-xl tracking-[-0.03em]">EPF Sentinel</span>
+    <div className="relative flex min-h-dvh flex-col overflow-x-hidden bg-white text-neutral-950">
+      <WordBackdrop />
+      <header className="relative z-20 w-full">
+        <div className="relative flex w-full items-center justify-between px-5 py-4 sm:px-7">
+          <Link to={email ? '/claims' : '/signin'} className="relative z-10 flex items-center gap-3">
+            <BrandMark className="h-12 w-12 text-neutral-950 sm:h-14 sm:w-14" />
+            <span className="text-3xl tracking-[-0.04em] sm:text-4xl">EPF Sarthi</span>
           </Link>
 
           {showAppNav && (
@@ -43,15 +53,17 @@ export function Layout({ children }: { children: ReactNode }) {
 
           {showAppNav && (
             <div className="relative z-10 flex items-center gap-2">
-              <a
-                href={config.epfigmsUrl}
-                target="_blank"
-                rel="noreferrer noopener"
-                aria-label="Open the official EPFiGMS portal"
-                className={iconButtonClass}
+              <button
+                type="button"
+                onClick={() => navigate('/profile')}
+                aria-label="Open profile"
+                className={cn(iconButtonClass, 'h-9 w-auto gap-2 px-2.5')}
               >
-                <HiArrowUpRight className="size-3.5" />
-              </a>
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-neutral-950 text-[11px] text-white">
+                  {initials}
+                </span>
+                Profile
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -75,8 +87,8 @@ export function Layout({ children }: { children: ReactNode }) {
 
       <main
         className={cn(
-          'relative z-10 mx-auto w-full flex-1',
-          isAuthPage ? 'max-w-none' : 'max-w-5xl px-6 py-6',
+          'relative z-10 w-full flex-1',
+          isAuthPage ? 'flex flex-col justify-center px-0' : 'mx-auto max-w-5xl px-6 py-6',
         )}
       >
         {children}
@@ -149,9 +161,9 @@ function Disclaimer({
   onToggle: (open: boolean) => void;
 }) {
   return (
-    <footer id="notice" className="relative z-10">
-      <div className="mx-auto max-w-5xl px-6 py-6">
-        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
+    <footer id="notice" className="relative z-10 w-full">
+      <div className="flex w-full items-stretch gap-2 px-5 py-4 sm:px-7">
+        <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200/70 bg-white/70 backdrop-blur-md">
           <button
             type="button"
             aria-expanded={open}
@@ -169,7 +181,7 @@ function Disclaimer({
           {open && (
             <div className="space-y-2 border-t border-neutral-200 px-4 py-3 text-sm leading-relaxed text-neutral-600">
               <p>
-                EPF Sentinel is an independent tool and is{' '}
+                EPF Sarthi is an independent tool and is{' '}
                 <strong className="text-neutral-800">
                   not affiliated with, endorsed by, or operated by EPFO
                 </strong>
@@ -184,11 +196,32 @@ function Disclaimer({
               <p>
                 Claim text and uploaded document text are processed by the Google Gemini API, a
                 third-party model provider. UAN, bank account numbers, and credentials are redacted
-                in code before any outbound call.
+                in code before any outbound call. See{' '}
+                <Link to="/privacy" className="underline">
+                  Privacy and help
+                </Link>
+                .
               </p>
             </div>
           )}
         </div>
+        <a
+          href={config.epfigmsUrl}
+          target="_blank"
+          rel="noreferrer noopener"
+          aria-label="Open the official EPFiGMS portal"
+          className={cn(
+            iconButtonClass,
+            'h-auto min-h-11 w-11 shrink-0 self-stretch rounded-2xl',
+          )}
+        >
+          <HiArrowUpRight className="size-4" />
+        </a>
+      </div>
+      <div className="px-5 pb-4 sm:px-7">
+        <Link to="/privacy" className="text-sm text-neutral-500 underline">
+          Privacy and help
+        </Link>
       </div>
     </footer>
   );

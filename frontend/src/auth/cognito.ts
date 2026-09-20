@@ -132,6 +132,14 @@ export function getIdToken(): Promise<string | null> {
 }
 
 export function getSignedInEmail(): Promise<string | null> {
+  return getIdTokenPayload().then((payload) => payload?.email ?? getCurrentUser()?.getUsername() ?? null);
+}
+
+export function getIdTokenPayload(): Promise<{
+  email?: string;
+  email_verified?: boolean | string;
+  sub?: string;
+} | null> {
   return new Promise((resolve) => {
     const user = getCurrentUser();
     if (!user) {
@@ -143,8 +151,102 @@ export function getSignedInEmail(): Promise<string | null> {
         resolve(null);
         return;
       }
-      const payload = session.getIdToken().decodePayload() as { email?: string };
-      resolve(payload.email ?? user.getUsername());
+      resolve(session.getIdToken().decodePayload() as {
+        email?: string;
+        email_verified?: boolean | string;
+        sub?: string;
+      });
+    });
+  });
+}
+
+export function getUserAttributes(): Promise<Record<string, string>> {
+  return new Promise((resolve) => {
+    const user = getCurrentUser();
+    if (!user) {
+      resolve({});
+      return;
+    }
+    user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+      if (err || !session?.isValid()) {
+        resolve({});
+        return;
+      }
+      user.getUserAttributes((attrErr, attrs) => {
+        if (attrErr || !attrs) {
+          resolve({});
+          return;
+        }
+        const out: Record<string, string> = {};
+        for (const attr of attrs) {
+          out[attr.getName()] = attr.getValue();
+        }
+        resolve(out);
+      });
+    });
+  });
+}
+
+export function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const user = getCurrentUser();
+    if (!user) {
+      reject(new AuthError('Sign in again to change your password.', 'NOT_SIGNED_IN'));
+      return;
+    }
+    user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+      if (err || !session?.isValid()) {
+        reject(new AuthError('Your session has expired. Sign in again.', 'SESSION_EXPIRED'));
+        return;
+      }
+      user.changePassword(currentPassword, newPassword, (pwErr) => {
+        if (pwErr) {
+          reject(toAuthError(pwErr));
+          return;
+        }
+        resolve();
+      });
+    });
+  });
+}
+
+export function forgotPassword(email: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    cognitoUser(email).forgotPassword({
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(toAuthError(err)),
+    });
+  });
+}
+
+export function confirmForgotPassword(email: string, code: string, newPassword: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    cognitoUser(email).confirmPassword(code, newPassword, {
+      onSuccess: () => resolve(),
+      onFailure: (err) => reject(toAuthError(err)),
+    });
+  });
+}
+
+export function deleteSignedInUser(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    const user = getCurrentUser();
+    if (!user) {
+      reject(new AuthError('Sign in again to delete this account.', 'NOT_SIGNED_IN'));
+      return;
+    }
+    user.getSession((err: Error | null, session: CognitoUserSession | null) => {
+      if (err || !session?.isValid()) {
+        reject(new AuthError('Your session has expired. Sign in again.', 'SESSION_EXPIRED'));
+        return;
+      }
+      user.deleteUser((deleteErr) => {
+        if (deleteErr) {
+          reject(toAuthError(deleteErr));
+          return;
+        }
+        resolve();
+      });
     });
   });
 }

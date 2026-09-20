@@ -5,6 +5,8 @@ import { Layout } from './components/Layout';
 import { ClaimDetail } from './pages/ClaimDetail';
 import { Claims } from './pages/Claims';
 import { NewClaim } from './pages/NewClaim';
+import { PrivacyHelp } from './pages/PrivacyHelp';
+import { Profile } from './pages/Profile';
 import { SignIn } from './pages/SignIn';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
@@ -53,6 +55,15 @@ function Routing() {
             </RequireAuth>
           }
         />
+        <Route
+          path="/profile"
+          element={
+            <RequireAuth>
+              <Profile />
+            </RequireAuth>
+          }
+        />
+        <Route path="/privacy" element={<PrivacyHelp />} />
         <Route path="*" element={<Navigate to="/claims" replace />} />
       </Routes>
     </Layout>
